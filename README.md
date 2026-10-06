@@ -6,7 +6,7 @@
 [![DeepXDE 1.15+](https://img.shields.io/badge/DeepXDE-1.15%2B-green.svg)](https://deepxde.readthedocs.io/)
 [![NeuralOperator 2.0+](https://img.shields.io/badge/NeuralOperator-2.0%2B-orange.svg)](https://github.com/neuraloperator/neuraloperator)
 [![CI Benchmarks](https://img.shields.io/badge/Benchmarks-20%2F20%20PASS%20(100%25)-brightgreen.svg)]()
-[![Documentation: Online](https://img.shields.io/badge/Online%20Reader-GitHub%20Pages-blueviolet)](https://github.com)
+[![Documentation: Online](https://img.shields.io/badge/Online%20Reader-GitHub%20Pages-blueviolet)](https://shaoyitong2022-dot.github.io/From-FDM-to-FNO/)
 
 > **Core Narrative**: From turning a differential equation into 20 lines of verifiable numerical code, to learning solution operators across function spaces using Fourier Neural Operators (FNO) and Physics-Informed Neural Networks (PINN).  
 > **Student**: Yitong (怡通), Department of Physics, Sun Yat-sen University (SYSU).  
@@ -159,8 +159,8 @@ Run all unit tests, stability scans, and the full 20-kernel benchmark harness in
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-username/from-fdm-to-fno.git
-cd from-fdm-to-fno
+git clone https://github.com/shaoyitong2022-dot/From-FDM-to-FNO.git
+cd From-FDM-to-FNO
 
 # 2. Run unit tests (Physical invariants, divergence-free flow, autograd gradients)
 python -m unittest discover -s tests -p "test_*.py"
