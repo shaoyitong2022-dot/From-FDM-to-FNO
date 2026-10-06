@@ -3,281 +3,685 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>From FDM to FNO: Computational Physics & AI4Science PDE Solver Kernel Suite</title>
-<link rel="stylesheet" href="courseware/assets/course.css">
+<title>From FDM to FNO: Computational Physics & AI4Science Solver Kernel Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --primary: #0f172a;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  --card-bg: #ffffff;
+  --bg-paper: #faf8f5;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f3f0ea;
+  --border-hairline: #e6e2d8;
+  --border-strong: #2c2c2c;
+  --text-main: #1f2328;
+  --text-muted: #595f69;
+  --text-faint: #848a94;
+  --accent-ink: #0f3b6c;
+  --accent-hover: #1e5aa0;
+  --font-serif: "Newsreader", Charter, Iowan Old Style, Merriweather, Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", SFMono-Regular, Consolas, Menlo, monospace;
 }
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: #f8fafc;
-  color: #334155;
-  line-height: 1.6;
+  background-color: var(--bg-paper);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
 }
 
-.hero {
-  background: var(--bg-gradient);
-  color: #ffffff;
-  padding: 4.5rem 2rem 3.5rem;
-  text-align: center;
-  border-bottom: 1px solid #334155;
-}
-
-.hero h1 {
-  font-size: 2.75rem;
-  font-weight: 800;
-  margin: 0 0 1rem;
-  letter-spacing: -0.025em;
-  background: linear-gradient(to right, #60a5fa, #38bdf8, #818cf8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.hero p.tagline {
-  font-size: 1.25rem;
-  max-width: 860px;
-  margin: 0 auto 1.75rem;
-  color: #cbd5e1;
-  font-weight: 400;
-}
-
-.hero-badges {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.hero-badges img {
-  height: 24px;
-}
-
-.cta-group {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.85rem 1.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 8px;
+a {
+  color: var(--accent-ink);
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease;
 }
 
-.cta-primary {
-  background: #2563eb;
-  color: #ffffff;
-  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
-}
-
-.cta-primary:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-.cta-secondary {
-  background: #334155;
-  color: #f8fafc;
-  border: 1px solid #475569;
-}
-
-.cta-secondary:hover {
-  background: #475569;
-  transform: translateY(-1px);
-}
-
-.container {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 3rem 1.5rem;
-}
-
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-}
-
-.feature-card {
-  background: var(--card-bg);
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.75rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.feature-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
-}
-
-.feature-card h3 {
-  font-size: 1.25rem;
-  color: #0f172a;
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.feature-card p {
-  color: #64748b;
-  font-size: 0.95rem;
-  margin-bottom: 1.25rem;
-}
-
-.card-link {
-  display: inline-block;
-  font-weight: 600;
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.card-link:hover {
+a:hover {
+  color: var(--accent-hover);
   text-decoration: underline;
 }
 
-.stats-bar {
+.monograph-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4.5rem 1.75rem 6rem;
+}
+
+/* Header & Meta */
+.journal-header {
+  border-bottom: 2px solid var(--border-strong);
+  padding-bottom: 2.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.journal-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.journal-badge {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+h1.monograph-title {
+  font-family: var(--font-serif);
+  font-size: 3.25rem;
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+p.monograph-subtitle {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 0 0 1.75rem;
+}
+
+.author-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  padding-top: 0.5rem;
+}
+
+.author-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.author-affil {
+  color: var(--text-muted);
+}
+
+.monograph-nav-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.75rem;
+}
+
+.btn-editorial {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.55rem 1rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-editorial:hover {
+  background: var(--bg-subtle);
+  border-color: #c9c4b8;
+  text-decoration: none;
+}
+
+.btn-editorial.primary {
+  background: var(--text-main);
+  color: #ffffff;
+  border-color: var(--text-main);
+}
+
+.btn-editorial.primary:hover {
+  background: #374151;
+}
+
+/* Abstract Box */
+.abstract-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-left: 3px solid var(--accent-ink);
+  padding: 1.6rem 2rem;
+  margin-bottom: 3.5rem;
+  border-radius: 2px;
+}
+
+.abstract-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin-bottom: 0.65rem;
+}
+
+.abstract-card p {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.08rem;
+  line-height: 1.7;
+  color: #27272a;
+}
+
+/* Metrics Table */
+.stats-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 3rem;
+  border-top: 1px solid var(--border-hairline);
+  border-bottom: 1px solid var(--border-hairline);
+  margin-bottom: 4rem;
+  background: var(--bg-surface);
+}
+
+.stat-cell {
+  padding: 1.25rem 1rem;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-right: 1px solid var(--border-hairline);
 }
 
-.stat-item h4 {
-  font-size: 2rem;
+.stat-cell:last-child {
+  border-right: none;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.55rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: block;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.2rem;
+  display: block;
+}
+
+/* Section Styling */
+.editorial-section {
+  margin-bottom: 4rem;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-hairline);
+  padding-bottom: 0.65rem;
+  margin-bottom: 1.75rem;
+}
+
+.section-head h2 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 600;
   margin: 0;
-  color: #0f172a;
-  font-weight: 800;
+  color: var(--text-main);
 }
 
-.stat-item p {
-  margin: 0.25rem 0 0;
-  color: #64748b;
-  font-size: 0.875rem;
+.section-head .section-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Volume Syllabus Layout */
+.volume-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.25rem;
+  border-radius: 3px;
+  transition: border-color 0.15s ease;
+}
+
+.volume-card:hover {
+  border-color: #bbb4a5;
+}
+
+.volume-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.volume-number {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.volume-benchmark-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.volume-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0.5rem;
+  color: var(--text-main);
+}
+
+.volume-citations {
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  margin-bottom: 1rem;
+  font-family: var(--font-mono);
+}
+
+.volume-desc {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+}
+
+.lesson-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px dashed var(--border-hairline);
+  padding-top: 0.85rem;
+}
+
+.lesson-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.45rem 0;
+  font-size: 0.92rem;
+}
+
+.lesson-link {
   font-weight: 500;
+  color: var(--text-main);
+}
+
+.lesson-link:hover {
+  color: var(--accent-ink);
+}
+
+.lesson-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+/* Academic Table (JCP / SIAM Style) */
+.paper-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 1.5rem 0 2.5rem;
+  background: var(--bg-surface);
+}
+
+.paper-table th {
+  border-top: 2px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: left;
+}
+
+.paper-table td {
+  border-bottom: 1px solid var(--border-hairline);
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  vertical-align: top;
+}
+
+.paper-table tr:last-child td {
+  border-bottom: 2px solid var(--border-strong);
+}
+
+.code-badge {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  background: var(--bg-subtle);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* BibTeX Citation Box */
+.citation-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  padding: 1.5rem;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: #374151;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+/* Footer */
+.monograph-footer {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: 2.5rem;
+  margin-top: 5rem;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 @media (max-width: 768px) {
-  .hero h1 { font-size: 2rem; }
-  .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  h1.monograph-title { font-size: 2.35rem; }
+  .stats-strip { grid-template-columns: repeat(2, 1fr); }
+  .stat-cell:nth-child(2) { border-right: none; }
+  .stat-cell { border-bottom: 1px solid var(--border-hairline); }
 }
 </style>
 </head>
 <body>
 
-<header class="hero">
-  <div class="hero-badges">
-    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License MIT">
-    <img src="https://img.shields.io/badge/Benchmarks-20%2F20%20PASS%20(100%25)-brightgreen.svg" alt="Benchmarks 20/20 PASS">
-    <img src="https://img.shields.io/badge/Python-3.10%2B-blue.svg" alt="Python 3.10+">
-    <img src="https://img.shields.io/badge/PyTorch-2.5%2B-ee4c2c.svg" alt="PyTorch 2.5+">
-    <img src="https://img.shields.io/badge/DeepXDE-1.15%2B-green.svg" alt="DeepXDE 1.15+">
-    <img src="https://img.shields.io/badge/NeuralOperator-2.0%2B-orange.svg" alt="NeuralOperator 2.0+">
-  </div>
-  <h1>From FDM to FNO</h1>
-  <p class="tagline">
-    面向计算物理与 AI4Science 顶尖名校直博/高阶研发的 PDE 算法内核与全景教程体系<br>
-    从 20 行手写有限差分到傅里叶神经算子（FNO），全链路闭环可复现基准套件
-  </p>
-  <div class="cta-group">
-    <a href="courseware/index.html" class="cta-btn cta-primary">📖 开启在线全景教材 (28章)</a>
-    <a href="courseware/tablet/index.html" class="cta-btn cta-secondary">📱 单文件离线阅读 (Tablet)</a>
-    <a href="https://github.com/shaoyitong2022-dot/From-FDM-to-FNO" class="cta-btn cta-secondary">⭐ GitHub 仓库源码</a>
-  </div>
-</header>
+<div class="monograph-container">
 
-<main class="container">
+  <!-- Header -->
+  <header class="journal-header">
+    <div class="journal-meta">
+      <span>Computational Physics &amp; AI4Science Suite</span>
+      <span class="journal-badge">Verified Open-Source Monograph</span>
+    </div>
 
-  <div class="stats-bar">
-    <div class="stat-item">
-      <h4>20 / 20</h4>
-      <p>基准测试通过率 (100%)</p>
+    <h1 class="monograph-title">From FDM to FNO</h1>
+    <p class="monograph-subtitle">
+      A Benchmark Portfolio &amp; Interactive Monograph Unifying Classical Finite Difference with Operator Learning
+    </p>
+
+    <div class="author-meta">
+      <span class="author-name">Yitong (怡通)</span>
+      <span class="author-affil">Department of Physics, Sun Yat-sen University</span>
+      <span style="color: var(--text-faint);">·</span>
+      <span style="font-family: var(--font-mono); font-size: 0.85rem;">Fall 2026</span>
     </div>
-    <div class="stat-item">
-      <h4>5 卷 · 28 课</h4>
-      <p>全景核心教程讲义</p>
+
+    <div class="monograph-nav-buttons">
+      <a href="courseware/index.html" class="btn-editorial primary">Read Full Monograph (28 Ch.) →</a>
+      <a href="courseware/tablet/index.html" class="btn-editorial">Offline Tablet Edition</a>
+      <a href="LEADERBOARD.md" class="btn-editorial">Leaderboard &amp; Daily Radar</a>
+      <a href="https://github.com/shaoyitong2022-dot/From-FDM-to-FNO" class="btn-editorial">GitHub Repository</a>
     </div>
-    <div class="stat-item">
-      <h4>34 篇</h4>
-      <p>零 CDN 纯净离线课件</p>
-    </div>
-    <div class="stat-item">
-      <h4>0.00%</h4>
-      <p>黑盒依赖 · 原生实现</p>
-    </div>
+  </header>
+
+  <!-- Abstract -->
+  <div class="abstract-card">
+    <div class="abstract-title">Abstract</div>
+    <p>
+      We present <em>From FDM to FNO</em>, an open-source numerical kernel portfolio and interactive monograph designed for direct Ph.D. research and high-performance computing in computational physics and scientific machine learning (SciML). Beginning with explicit first-principles finite difference discretizations (FDM) for advection, diffusion, and incompressible Navier-Stokes projection methods, the curriculum systematically progresses to continuous implicit neural fields (PINN) and infinite-dimensional Fourier Neural Operators (FNO). All 20 canonical solver kernels are regression-verified against analytical benchmarks (Cole-Hopf, Fourier series) and empirical convergence rates ($p=1.00, p=2.01$), backed by 28 canonical textbook chapters, 34 zero-CDN offline lessons, and an automated daily arXiv research surveillance pipeline.
+    </p>
   </div>
 
-  <h2 style="font-size: 1.75rem; color: #0f172a; margin-bottom: 0.5rem;">📚 核心架构与阅读入口</h2>
-  <p style="color: #64748b; margin-top: 0;">严格对标顶会与顶级文献（Barba CFDPython · Strang MIT 18.086 · Lu Lu DeepXDE · Caltech FNO）</p>
-
-  <div class="grid-3">
-    <div class="feature-card">
-      <h3>🌊 卷一：离散世界与有限差分底座</h3>
-      <p>基于 Lorena Barba CFDPython 与 LeVeque SIAM 经典教材。从 1D 线性对流、CFL 条件、黏性 Burgers 到 2D 顶盖驱动方腔流不可压缩 NS 方程。</p>
-      <a href="courseware/01_CFDPython/0001-env-numpy-first-look.html" class="card-link">进入卷一 (10章) →</a>
+  <!-- Key Metrics Strip -->
+  <div class="stats-strip">
+    <div class="stat-cell">
+      <span class="stat-value">20 / 20</span>
+      <span class="stat-label">Benchmarks Passed</span>
     </div>
-
-    <div class="feature-card">
-      <h3>🧠 卷二：隐式神经场与 PINN 范式</h3>
-      <p>连续神经场、二阶自动求导图计算、多任务损失梯度病理。从阻尼振子到时空激波，打破固定空间离散网格的传统束缚。</p>
-      <a href="courseware/01_CFDPython/0011-b1-pinn-concept.html" class="card-link">进入卷二 (5章) →</a>
+    <div class="stat-cell">
+      <span class="stat-value">5 Vol. · 28 Ch.</span>
+      <span class="stat-label">Full Monograph</span>
     </div>
-
-    <div class="feature-card">
-      <h3>⚙️ 卷三：工业级开源框架 DeepXDE</h3>
-      <p>基于 Lu Lu (SIAM Review) 声明式物理 API 工业级实现。涵盖 1D 泊松点火、Hessian 索引规范、时空激波拟合与 FDM 双轨跨界较量。</p>
-      <a href="courseware/02_DeepXDE/0001-setup-first-pinn.html" class="card-link">进入卷三 (5章) →</a>
+    <div class="stat-cell">
+      <span class="stat-value">34 Lessons</span>
+      <span class="stat-label">Standalone Tablet</span>
     </div>
-
-    <div class="feature-card">
-      <h3>⚡ 卷四：神经算子与傅里叶神经算子 (FNO)</h3>
-      <p>Caltech neuraloperator 官方标准。从解单个偏微分方程跨越至学习整族无限维算子解流形，纯手写 1D 谱卷积到零样本超分辨率泛化。</p>
-      <a href="courseware/03_FNO/0001-paradigm-shift-operator-learning.html" class="card-link">进入卷四 (5章) →</a>
-    </div>
-
-    <div class="feature-card">
-      <h3>📐 卷五：MIT 18.086 计算科学数学精要</h3>
-      <p>Gilbert Strang 计算科学精要。四大基础方程分类、离散差分矩阵 -K 特征值谱分布、von Neumann 稳定性复数放大因子严密证明。</p>
-      <a href="courseware/04_MIT18086_理论导学/0001-l01-four-pdes.html" class="card-link">进入卷五 (3章) →</a>
-    </div>
-
-    <div class="feature-card">
-      <h3>🛠️ 共享工具箱与直觉参考</h3>
-      <p>包含 NumPy/SymPy 科学计算工具箱、流体直觉与物理图像、中英双语专业术语表以及全景 Stage 0-5 渐进学习路线图。</p>
-      <a href="courseware/reference/index.html" class="card-link">查阅参考中心 →</a>
+    <div class="stat-cell">
+      <span class="stat-value">0.00%</span>
+      <span class="stat-label">CDN Dependencies</span>
     </div>
   </div>
 
-</main>
+  <!-- Syllabus / Volumes -->
+  <section class="editorial-section">
+    <div class="section-head">
+      <h2>Curriculum &amp; Volume Architecture</h2>
+      <span class="section-tag">Five Canonical Volumes</span>
+    </div>
 
-<footer style="text-align: center; padding: 2.5rem 1rem; color: #94a3b8; font-size: 0.875rem; border-top: 1px solid #e2e8f0; background: #ffffff;">
-  <p>From FDM to FNO Suite · 遵循 MIT 与 CC-BY-4.0 开源协议 · 针对海外顶尖名校直博及工业级科研构建</p>
-</footer>
+    <!-- Volume I -->
+    <div class="volume-card">
+      <div class="volume-header">
+        <span class="volume-number">Volume I · Chapters 01–10</span>
+        <span class="volume-benchmark-count">12 Solver Kernels (FDM)</span>
+      </div>
+      <h3 class="volume-title">Foundations of Discrete Stencils &amp; Classical Incompressible CFD</h3>
+      <div class="volume-citations">Literature Grounding: Barba &amp; Forsyth (JOSS 2018) · LeVeque (SIAM 2007)</div>
+      <p class="volume-desc">
+        First-principles spatial and temporal discretizations on Cartesian meshes without black-box libraries. Derives characteristics, upwind causality, artificial numerical dissipation, Courant-Friedrichs-Lewy (CFL) stability bounds, Cole-Hopf analytical Burgers solutions, and Chorin's projection method for lid-driven cavity and channel flows.
+      </p>
+      <ul class="lesson-list">
+        <li class="lesson-item">
+          <a href="courseware/01_CFDPython/0002-step1-linear-convection.html" class="lesson-link">Step 01: 1D Linear Advection &amp; Upwind Causality</a>
+          <span class="lesson-tag">FDM 01 · Upwind FTBS</span>
+        </li>
+        <li class="lesson-item">
+          <a href="courseware/01_CFDPython/0006-step4-burgers.html" class="lesson-link">Step 04: Viscous Burgers Equation vs. Exact Cole-Hopf Benchmark</a>
+          <span class="lesson-tag">FDM 04 · Analytical L2</span>
+        </li>
+        <li class="lesson-item">
+          <a href="courseware/01_CFDPython/0010-step11-12-ns-cavity-channel.html" class="lesson-link">Steps 11–12: Incompressible Navier-Stokes &amp; Ghia 1982 Cavity Benchmark</a>
+          <span class="lesson-tag">FDM 11–12 · Chorin Projection</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Volume II -->
+    <div class="volume-card">
+      <div class="volume-header">
+        <span class="volume-number">Volume II · Chapters 11–15</span>
+        <span class="volume-benchmark-count">5 Solver Kernels (PINN)</span>
+      </div>
+      <h3 class="volume-title">Continuous Implicit Fields &amp; Physics-Informed Neural Networks</h3>
+      <div class="volume-citations">Literature Grounding: Raissi et al. (JCP 2019) · Wang et al. (SISC 2021)</div>
+      <p class="volume-desc">
+        Transitions from discrete spatial grids to mesh-free coordinate neural networks. Covers higher-order PyTorch automatic differentiation (<span class="code-badge">torch.autograd</span>), gradient pathologies in multi-task loss optimization, trivial zero-solution collapse, and out-of-distribution (OOD) extrapolation limits.
+      </p>
+      <ul class="lesson-list">
+        <li class="lesson-item">
+          <a href="courseware/01_CFDPython/0011-b1-pinn-concept.html" class="lesson-link">Chapter 11: Continuous Implicit Neural Fields &amp; Collocation Residuals</a>
+          <span class="lesson-tag">PINN 01 · Autograd Graph</span>
+        </li>
+        <li class="lesson-item">
+          <a href="courseware/01_CFDPython/0015-b5-three-curve-comparison.html" class="lesson-link">Chapter 15: Three-Curve Cross-Validation: Analytical vs. FDM vs. PINN</a>
+          <span class="lesson-tag">PINN 05 · Rigorous Bounds</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Volume III -->
+    <div class="volume-card">
+      <div class="volume-header">
+        <span class="volume-number">Volume III · Chapters 16–20</span>
+        <span class="volume-benchmark-count">DeepXDE Framework Suite</span>
+      </div>
+      <h3 class="volume-title">Industrial Declarative PDE Frameworks &amp; DeepXDE Architecture</h3>
+      <div class="volume-citations">Literature Grounding: Lu Lu et al. (SIAM Review 2021)</div>
+      <p class="volume-desc">
+        Explores production-grade declarative SciML frameworks. Analyzes geometry domains, spatio-temporal manifolds (<span class="code-badge">GeometryXTime</span>), Hessian diagonal indexing rules, point-set boundary conditions, and two-stage Adam-to-L-BFGS quasi-Newton refinement.
+      </p>
+      <ul class="lesson-list">
+        <li class="lesson-item">
+          <a href="courseware/02_DeepXDE/0001-setup-first-pinn.html" class="lesson-link">Chapter 16: DeepXDE Architecture &amp; 1D Poisson Baseline</a>
+          <span class="lesson-tag">DeepXDE 01 · Declarative API</span>
+        </li>
+        <li class="lesson-item">
+          <a href="courseware/02_DeepXDE/0005-capstone-poisson-fdm-comparison.html" class="lesson-link">Chapter 20: 2D Poisson Cross-Method Validation: FDM 5-Point vs. DeepXDE</a>
+          <span class="lesson-tag">DeepXDE 05 · Pointwise L2</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Volume IV -->
+    <div class="volume-card">
+      <div class="volume-header">
+        <span class="volume-number">Volume IV · Chapters 21–25</span>
+        <span class="volume-benchmark-count">3 Solver Kernels (FNO)</span>
+      </div>
+      <h3 class="volume-title">Operator Learning &amp; Fourier Neural Operators (FNO)</h3>
+      <div class="volume-citations">Literature Grounding: Li, Kovachki, Stuart, Anandkumar (ICLR 2021)</div>
+      <p class="volume-desc">
+        A paradigm leap from solving a single PDE instance to mapping infinite-dimensional Banach function spaces. Handcrafts 1D spectral convolutions via real-valued FFTs (<span class="code-badge">rFFT</span>), assesses truncation-induced Gibbs phenomena, and evaluates zero-shot 4x super-resolution mesh independence.
+      </p>
+      <ul class="lesson-list">
+        <li class="lesson-item">
+          <a href="courseware/03_FNO/0003-spectral-conv-from-scratch.html" class="lesson-link">Chapter 23: Spectral Convolution from Scratch: PyTorch rFFT &amp; Mode Multiplication</a>
+          <span class="lesson-tag">FNO 01 · Pure PyTorch</span>
+        </li>
+        <li class="lesson-item">
+          <a href="courseware/03_FNO/0005-capstone-fdm-data-super-resolution.html" class="lesson-link">Chapter 25: Unified Closure: FDM Data Pipeline &times; FNO Operator Inference</a>
+          <span class="lesson-tag">FNO 03 · Zero-Shot Generalization</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Volume V -->
+    <div class="volume-card">
+      <div class="volume-header">
+        <span class="volume-number">Volume V · Chapters 26–28</span>
+        <span class="volume-benchmark-count">Mathematical Foundations</span>
+      </div>
+      <h3 class="volume-title">Computational Science Mathematical Foundations: MIT 18.086</h3>
+      <div class="volume-citations">Literature Grounding: Gilbert Strang (Wellesley-Cambridge Press / MIT 18.086)</div>
+      <p class="volume-desc">
+        Linear algebra and stability theory underpinning all continuous simulations. Dissects the second-difference matrix <span class="code-badge">-K</span>, eigenvalue spectral distributions, and provides rigorous complex amplification proofs for von Neumann stability.
+      </p>
+      <ul class="lesson-list">
+        <li class="lesson-item">
+          <a href="courseware/04_MIT18086_理论导学/0002-l02-finite-difference-matrices.html" class="lesson-link">Chapter 27: Finite Difference Matrices, Eigenvalue Extremes &amp; Stability Limits</a>
+          <span class="lesson-tag">MIT 02 · Strang Algebra</span>
+        </li>
+        <li class="lesson-item">
+          <a href="courseware/04_MIT18086_理论导学/0003-l03-cfl-and-von-neumann.html" class="lesson-link">Chapter 28: Von Neumann Stability Proof &amp; Spectral Radius Analysis</a>
+          <span class="lesson-tag">MIT 03 · Amplification Factor</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Cross-Method Comparison Matrix -->
+  <section class="editorial-section">
+    <div class="section-head">
+      <h2>Cross-Method Benchmark Comparison</h2>
+      <span class="section-tag">JCP / SIAM Review Standards</span>
+    </div>
+
+    <table class="paper-table">
+      <thead>
+        <tr>
+          <th>Evaluation Dimension</th>
+          <th>Classical FDM (Barba/LeVeque)</th>
+          <th>Physics-Informed NN (PINN)</th>
+          <th>Fourier Neural Operator (FNO)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Problem Scope</strong></td>
+          <td>Solves a single boundary-value instance</td>
+          <td>Solves a single forward or inverse instance</td>
+          <td>Learns continuous mapping over function spaces</td>
+        </tr>
+        <tr>
+          <td><strong>Execution Cost</strong></td>
+          <td>0.1ms – 215ms (Fast forward solve)</td>
+          <td>8.5s – 19.8s (Iterative optimization)</td>
+          <td>&lt;10ms inference (1.6s operator training)</td>
+        </tr>
+        <tr>
+          <td><strong>Exact Conservation</strong></td>
+          <td>Strict (Discrete divergence-free flux)</td>
+          <td>Approximate (Soft penalty in loss)</td>
+          <td>Approximate (Continuous kernel integration)</td>
+        </tr>
+        <tr>
+          <td><strong>Discretization Coupling</strong></td>
+          <td>Bound to Cartesian spatial grid &Delta;x</td>
+          <td>Mesh-free collocation in continuous domain</td>
+          <td>Mesh-independent (Zero-shot super-resolution)</td>
+        </tr>
+        <tr>
+          <td><strong>Optimal Research Role</strong></td>
+          <td>High-fidelity forward simulation kernel</td>
+          <td>Sparse-sensor inverse parameter recovery</td>
+          <td>Real-time digital twins &amp; surrogate control</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- How to Cite -->
+  <section class="editorial-section">
+    <div class="section-head">
+      <h2>Citation &amp; Academic Reference</h2>
+      <span class="section-tag">BibTeX</span>
+    </div>
+
+    <pre class="citation-box">@software{shaoyitong2026fdmtofno,
+  author       = {Shao, Yitong},
+  title        = {{From FDM to FNO: Computational Physics \& AI4Science PDE Solver Kernel Suite}},
+  year         = {2026},
+  publisher    = {GitHub},
+  journal      = {GitHub repository},
+  howpublished = {\url{https://github.com/shaoyitong2022-dot/From-FDM-to-FNO}}
+}</pre>
+  </section>
+
+  <!-- Footer -->
+  <footer class="monograph-footer">
+    <div>
+      From FDM to FNO Suite · Licensed under <a href="LICENSE">MIT &amp; CC-BY-4.0</a>
+    </div>
+    <div>
+      Department of Physics, Sun Yat-sen University (SYSU)
+    </div>
+  </footer>
+
+</div>
 
 </body>
 </html>
