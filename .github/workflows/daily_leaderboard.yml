@@ -1,0 +1,43 @@
+name: Daily AI4Science Radar & Benchmark Leaderboard
+
+on:
+  schedule:
+    # Runs daily at 00:00 UTC (08:00 Beijing Time)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+permissions:
+  contents: write
+
+jobs:
+  update-leaderboard:
+    name: Run Benchmarks & Sync ArXiv Radar
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install Scientific Packages
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy scipy matplotlib sympy torch deepxde neuraloperator
+
+    - name: Execute Daily Radar & Leaderboard Pipeline
+      run: |
+        python scripts/daily_radar_and_leaderboard.py
+
+    - name: Commit and Push Updated Leaderboard
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add LEADERBOARD.md
+        git diff --staged --quiet || (git commit -m "chore(auto): update daily AI4Science radar & benchmark leaderboard [$(date -u +'%Y-%m-%d')]" && git push origin main)

@@ -7,6 +7,7 @@
 [![NeuralOperator 2.0+](https://img.shields.io/badge/NeuralOperator-2.0%2B-orange.svg)](https://github.com/neuraloperator/neuraloperator)
 [![CI Benchmarks](https://img.shields.io/badge/Benchmarks-20%2F20%20PASS%20(100%25)-brightgreen.svg)]()
 [![Documentation: Online](https://img.shields.io/badge/Online%20Reader-GitHub%20Pages-blueviolet)](https://shaoyitong2022-dot.github.io/From-FDM-to-FNO/)
+[![AI4Science Leaderboard](https://img.shields.io/badge/AI4Science%20Radar-Daily%20Updated-success.svg)](LEADERBOARD.md)
 
 > **Core Narrative**: From turning a differential equation into 20 lines of verifiable numerical code, to learning solution operators across function spaces using Fourier Neural Operators (FNO) and Physics-Informed Neural Networks (PINN).  
 > **Student**: Yitong (怡通), Department of Physics, Sun Yat-sen University (SYSU).  
