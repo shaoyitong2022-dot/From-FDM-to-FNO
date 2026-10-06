@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 22 章 · FNO 核心架构解剖 · Lifting P → Fourier Block → Projection Q</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷四：神经算子与傅里叶神经算子（FNO）前沿</p>
+  <h1>第 22 章 · FNO 核心架构解剖 · Lifting P → Fourier Block → Projection Q</h1>
+  <p class="meta">字数约 7,200 ｜ 建议学时：80 分钟 ｜ 核心架构：升维投影通道 · 频域非线性谐波混合 · 截断模态与空间旁路 W ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 手术刀级解剖算子网络机体</span>
+  <p><strong>承接上章：</strong>第 21 章我们理解了 FNO 作为无穷维函数空间映射算子的宏观哲学。现在，我们深入其网络工程拓扑的五脏六腑。</p>
+  <p><strong>本章解剖主线：</strong><strong>FNO 架构三部曲——升维提升（Lifting P） → 谱卷积残差块（Fourier Block） → 物理投影（Projection Q）（Step F-0002）</strong>。</p>
+  <p>为什么一个一维的物理标量场不能直接扔进傅里叶变换，而必须先“升维”到 64 个隐藏通道？为什么连续几个傅里叶层之间如果不加非线性激活函数，就会退化为一个毫无意义的单层线性滤波器？本章我们将追踪一个 <code>(Batch, Channels, Length)</code> 张量在 FNO 内部的完整变形轨迹，彻底打通算子深度学习的代码心智！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 掌握 FNO 前向骨架三大阶段（Lifting $P$、Fourier Block、Projection $Q$）的张量流转；<br>
+  ② 解析非线性激活函数在频域引发的非线性高阶谐波卷积混合（Frequency Mixing）机理；<br>
+  ③ 掌握多通道复数频域权重张量 $\mathbf{R} \in \mathbb{C}^{d_{	ext{in}} 	imes d_{	ext{out}} 	imes k_{\max}}$ 的参数化结构；<br>
+  ④ 熟练运用 <code>torch.einsum</code> 表达多轴复数张量乘法，规避普通矩阵乘法的轴错位灾难。
+</div>
+
+<h2>1 · 数学与工程基石：FNO 前向计算图的三阶推演</h2>
+
+<h3>1.1 阶段一：局部空间升维提升（Lifting $P$）</h3>
+<p>输入的物理场通常是低维标量（如输入通道 $d_a = 1$，仅包含初始波形值）。如果直接在 1 个通道上做频域相乘，模型能调整的自由度极低。提升层 $P$ 是一个原位逐点全连接层：</p>
+$$v_0(x) = P(a(x)), \quad P: \mathbb{R}^{d_a} 	o \mathbb{R}^{d_v} \quad (d_v = 64 	ext{ 或 } 128)$$
+<p>它在每个空间坐标点处，将单一的物理标量提升为包含丰富潜空间表征的高维特征向量。</p>
+
+<h3>1.2 阶段二：连续谱卷积迭代块（Fourier Blocks）</h3>
+<p>网络主体由 $L$ 个连续堆叠的傅里叶残差块串联而成（通常 $L=4$）：</p>
+$$v_{t+1}(x) = \sigma \left( W v_t(x) + \mathcal{F}^{-1} \Big( R_t \cdot \mathcal{F}(v_t) \Big)(x) 
+ight)$$
+<ul>
+  <li><strong>局部旁路 $W$：</strong>大小为 $d_v 	imes d_v$ 的空间逐点线性层，提供局域特征传递与非周期边界补偿；</li>
+  <li><strong>非局部谱核 $R_t$：</strong>仅作用于前 $k_{\max}$ 个低频模态的复数可训练张量；</li>
+  <li><strong>非线性激活 $\sigma$：</strong>如 GELU 或 ReLU。<strong>注意！频域相乘是线性的，必须在空间域施加非线性激活函数，才能促使能量在不同频率模态之间流动混合（Frequency Mixing）！</strong></li>
+</ul>
+
+<h3>1.3 阶段三：局部非线性投影（Projection $Q$）</h3>
+<p>在深层抽象特征提炼完成后，投影层 $Q$ 由两层带有激活函数的 MLP 组成，将潜空间特征局域压缩回真实物理输出维度：</p>
+$$u(x) = Q(v_L(x)), \quad Q: \mathbb{R}^{d_v} 	o \mathbb{R}^{d_u} \quad (d_u = 1)$$
+
+<h2>2 · 慢动作代码实现：FNO1d 整体模块骨架</h2>
+
+<pre><code>import torch
+import torch.nn as nn
+
+class FNO1dAnatomy(nn.Module):
+    def __init__(self, modes=16, width=64, in_channels=1, out_channels=1):
+        super().__init__()
+        self.modes = modes
+        self.width = width
+        
+        # 1. Lifting P: 升维层 (1 -> width)
+        self.p = nn.Linear(in_channels, width)
+        
+        # 2. Fourier Block 组件 (演示单层核心)
+        self.w = nn.Conv1d(width, width, kernel_size=1)  # 空间局域 1x1 卷积
+        # 复数频域权重张量: shape (in_channels, out_channels, modes)
+        scale = 1.0 / (width * width)
+        self.weights = nn.Parameter(
+            scale * torch.rand(width, width, modes, dtype=torch.cfloat)
+        )
+        self.activation = nn.GELU()
+        
+        # 3. Projection Q: 降维投影层 (width -> 128 -> out_channels)
+        self.q = nn.Sequential(
+            nn.Linear(width, 128),
+            nn.GELU(),
+            nn.Linear(128, out_channels)
+        )
+        
+    def forward(self, x):
+        # x: (Batch, Spatial, in_channels)
+        # 阶段一: 升维
+        x = self.p(x)  # (Batch, Spatial, width)
+        x = x.permute(0, 2, 1)  # 转为 (Batch, width, Spatial) 方便卷积与 FFT
+        
+        # 阶段二: Fourier Block
+        # 2.1 空间局域旁路 W
+        x_linear = self.w(x)
+        # 2.2 频域全局谱卷积
+        x_ft = torch.fft.rfft(x)  # (Batch, width, Spatial//2 + 1)
+        out_ft = torch.zeros_like(x_ft)
+        # 利用 Einstein 求和规范计算复数乘法并截断模态
+        out_ft[:, :, :self.modes] = torch.einsum(
+            "bix,iox->box", x_ft[:, :, :self.modes], self.weights
+        )
+        x_spectral = torch.fft.irfft(out_ft, n=x.size(-1))
+        # 2.3 融合并施加非线性激活
+        x = self.activation(x_linear + x_spectral)
+        
+        # 阶段三: 投影降维
+        x = x.permute(0, 2, 1)  # 转回 (Batch, Spatial, width)
+        x = self.q(x)          # (Batch, Spatial, out_channels)
+        return x
+
+model = FNO1dAnatomy()
+dummy_input = torch.randn(4, 1024, 1)
+output = model(dummy_input)
+print(f"FNO forward pass success. Output shape: {output.shape}")</code></pre>
+
+<table>
+  <tr><th>阶段组件</th><th>张量形状流转</th><th>物理数学职能</th><th>敏感性要点</th></tr>
+  <tr><td>Lifting $P$</td><td><code>(B, N, 1) -> (B, N, 64)</code></td><td>逐点特征空间升维</td><td>局部逐点映射，不引入跨空间混叠。</td></tr>
+  <tr><td>Fourier Block</td><td><code>(B, 64, N) -> (B, 64, N)</code></td><td>非局部全局格林函数积分</td><td><code>modes=16</code> 截断决定滤波能量尺度。</td></tr>
+  <tr><td>Projection $Q$</td><td><code>(B, N, 64) -> (B, N, 1)</code></td><td>多层 MLP 逐点物理还原</td><td>必须包含非线性层，解耦深层特征。</td></tr>
+</table>
+
+<h2>3 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】多层 Fourier 块缺失激活函数的退化实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>构建包含 4 层连续堆叠 Fourier Block 的网络，如果在层与层之间忘记插入非线性激活函数 $\sigma$：</p>
+    <p><strong>【请你先猜】</strong>4 层深层谱卷积网络的表现会比单层网络更强吗？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>网络表达能力断崖式跌落，4 层深层网络完全退化为最原始的单层线性频域滤波器！</p>
+    <p><strong>【物理与数值归因】</strong><br>傅里叶变换与频域模态复数矩阵乘法全部是纯线性算子！多个线性积分核的串联仍然等效为一个单一的线性算子。必须在每个 Block 之后施加非线性激活函数（如 GELU），利用非线性在频域引发的非线性高阶谐波卷积混合（Frequency Mixing），使能量跨模态流动！</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>3.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在 FNO 的投影层 $Q$ 中，工业界普遍采用带有 GELU 激活的两层全连接结构。请补齐投影网络声明：</p>
+<pre><code># TODO [主动生成]: 声明将隐层通道 width 投影回物理输出 out_channels 的 Q 层
+self.q = nn.Sequential(
+    nn.Linear(width, 128),
+    # 请填入非线性激活与最终映射层
+)</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>self.q = nn.Sequential(
+    nn.Linear(width, 128),
+    nn.GELU(),
+    nn.Linear(128, out_channels)
+)</code></pre>
+    <p><strong>【逐行 Why 注释】：</strong>第一层将宽通道解耦并经过 <code>nn.GELU()</code> 平滑非线性转换，第二层无激活线性压缩到实际物理场量程。若仅用单层线性映射，网络对复杂物理边界层的曲率表达能力将被腰斩。</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>3.3 张量维度全链路追踪推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 张量显存足迹心智模型对齐</span>
+  <p><strong>【输入配置】：</strong>批次 $B=8$，网格长度 $N=512$，输入通道 1。配置参数：<code>width=32, modes=12</code>。</p>
+  <p><strong>【推演任务】：</strong>推算在频域复数相乘这一瞬间，输入张量截断切片与权重张量各自的形状与元素个数。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准解答</summary>
+    <div class="a">
+      1. 截断频域输入 <code>x_ft[:, :, :modes]</code> 的形状为 <code>(8, 32, 12)</code>，数据类型为 <code>torch.cfloat</code>（每个元素包含实部与虚部两个 32 位浮点数）；<br>
+      2. 频域权重 <code>weights</code> 的形状为 <code>(32, 32, 12)</code>，包含 $32 	imes 32 	imes 12 = 12,288$ 个复数参数；<br>
+      3. 经过 <code>bix,iox->box</code> 求和后，输出形状保持 <code>(8, 32, 12)</code>，补零至 257 长度后执行 <code>irfft</code> 完美还原回 <code>(8, 32, 512)</code>！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>3.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位初学者试图用普通矩阵乘法代替 Einstein 求和，写出了如下代码，导致运行抛出 RuntimeError 或通道被错误折叠：</p>
+  <pre><code># 尝试用 torch.matmul 直接乘
+out_ft = torch.matmul(x_ft[:, :, :modes], weights)  # BUG! 轴序严重错位</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出为什么三维张量在批量、通道、频率多轴共存时，普通 <code>matmul</code> 会失效？给出工业级 <code>einsum</code> 规范。</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong><code>torch.matmul</code> 默认只对最后两个维度做二维矩阵乘法，而这里需要的是在第 1 维（输入通道 <code>i</code>）上求和收缩，同时在第 0 维（Batch <code>b</code>）和第 2 维（空间频率 <code>x</code>）上保持独立并行！普通乘法会强制将频率轴当作矩阵列，造成物理频率模态互相乱串！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>out_ft = torch.einsum("bix,iox->box", x_ft[:, :, :modes], weights)</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>4 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  三棱镜分光不是为了炫技，而是让错综复杂的流动解耦成单纯的旋律！
+</div>
+
+<h3>4.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>FNO 的内部结构和三棱镜分光有什么异曲同工之妙？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>通道升维、快速傅里叶、非线性混合、截断模态、投影</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “就像一束杂乱的太阳光穿过三棱镜，被瞬间分解成红橙黄绿青蓝紫各色单色光；FNO 在频域里给每种颜色的光单独配上一个专属的调节旋钮，调大有用的颜色、调小无用的杂色；最后通过倒放的透镜把所有调谐后的单色光重新汇聚成一道崭新且清晰的光柱。”
+    </div>
+  </details>
+</div>
+
+<h3>4.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（通道宽度压缩极限）：</strong>当隐层通道 <code>width = 1</code> 时，模型完全丧失多流形特征提取容量，表达能力剧烈萎缩。</li>
+  <li><strong>极限二（模态全覆盖极限）：</strong>若不进行模态截断（让 <code>modes</code> 覆盖全频率），参数量不仅随网格分辨率爆炸，且丧失了作为低通滤波器的正则化能力，极易过拟合训练集的高频离散白噪声。</li>
+  <li><strong>极限三（物理湍流能量级串）：</strong>在三维不可压缩湍流中，能量从大涡向微小柯尔莫哥洛夫尺度级联传递。模态数 <code>modes</code> 的截断位置，在物理上严格等价于大涡模拟（LES）的网格滤波截止尺度。</li>
+</ul>
+
+<h3>4.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么 FNO 不在普通物理空间直接使用一个 $512 	imes 512$ 的超大空间卷积核，非要大费周章转去频域？</p>
+  <p><strong>【真实底层】：</strong>因为<strong>物理空间超大卷积的计算复杂度是灾难性的 $O(N^2)$</strong>！如果流场网格是 $1000 	imes 1000$，空间全局卷积每一步需要进行 $10^{12}$ 次乘加运算，显卡当场冒烟烧崩！而在频域利用卷积定理，全局非局部卷积被奇迹般降维为点对点相乘，复杂度仅为 $O(N \log N)$（只需几百万次运算），计算速度暴增几十万倍！这是纯粹的数学降维打击。</li>
+</div>
+
+<h2>5 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>FNO 复数张量维度与 Einstein 求和规范核验！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FNO-0002</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fno/f01_spectral_conv1d.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe -c "import torch; w=torch.view_as_complex(torch.randn(16,16,8,2)); print('Complex Weights Tensor PASS')"</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>FNO 完整张量计算图：P 升维 -> 复数模态乘法 -> W 残差旁路 -> Q 降维投影流</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>彻底掌握 FNO 内部各张量维度的物理流转规律与复数算子机制</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>复数权重形状严格匹配 (in, out, modes)，频域求和维度正确性 100% 验证</strong></td></tr>
+</table>
+
+<h2>6 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：亲手手搓最硬核的谱卷积层！</span>
+  <p>我们已经彻底摸清了 FNO 的三脏六腑与前向流动机制。现在，我们要亲手戴上工匠的手套，下场打磨最核心的动力引擎！</p>
+  <p>下一章我们将进入 <strong>第 23 章 · 纯手写 1D 谱卷积层（SpectralConv1d）· 洞穿频域张量乘积</strong>！我们将彻底脱离第三方封装库，用纯原生 PyTorch 从第一行代码开始，手写出完整的 <code>SpectralConv1d</code> 神经网络层；掌握 <code>torch.fft.rfft</code> 的实数共轭对称性节约显存法则；并直面频域模态截断在空间断裂处激发的<strong>吉布斯震荡（Gibbs Phenomenon）</strong>！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对 FNO 的 P-Fourier-Q 三阶段张量架构已建立完整心智，请对我进行口头审查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0001-paradigm-shift-operator-learning.html">← 第 21 章 · 算子学习范式革命</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0003-spectral-conv-from-scratch.html">第 23 章 · 纯手写 1D 谱卷积层 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷四：神经算子与傅里叶神经算子（FNO）前沿</p>
+</footer>
+
+</div>
+</body>
+</html>

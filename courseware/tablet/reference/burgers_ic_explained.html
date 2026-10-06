@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Burgers 第六课：初值 / 分析解从哪来</title>
+<style>
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;max-width:820px;margin:24px auto;padding:0 18px;color:#2c2c2a;line-height:1.7;}
+  h1{font-size:22px;border-bottom:2px solid #854F0B;padding-bottom:6px;color:#0c447c;}
+  h2{font-size:17px;color:#185fa5;margin-top:26px;}
+  code{background:#f1efE8;padding:2px 6px;border-radius:4px;font-family:"Cascadia Code",Consolas,monospace;font-size:13px;}
+  .box{background:#f1efE8;border-left:4px solid #854F0B;padding:12px 16px;border-radius:6px;margin:14px 0;}
+  .fig{text-align:center;margin:18px 0;}
+  .note{color:#5f5e5a;font-size:13px;}
+</style>
+</head>
+<body>
+
+<h1>Burgers 方程第六课：初值 / 分析解到底从哪来？</h1>
+
+<div class="box">
+课程里那行让你卡住的式子：<br>
+<code>φ = e<sup>−(x−4t)²/4ν(t+1)</sup> + e<sup>−(x−4t−2π)²/4ν(t+1)</sup></code><br>
+<code>u = −2ν/φ · ∂φ/∂x + 4</code><br>
+它既不是"初值"也不是"解"的某一个——<b>它是同一条闭式公式，t 是自由变量</b>：代入 t=0 得到初值，代入任意 t 得到该时刻的精确解。
+</div>
+
+<h2>1. φ 是干什么的：Hopf-Cole 变换</h2>
+φ 是一个<b>辅助势函数</b>，不是答案本身；u 由它导出（<code>u = −2ν·(ln φ)<sub>x</sub> + 4</code>）。
+关键在于 <b>Hopf-Cole 变换</b>：把非线性 Burgers 方程
+<div class="box">u<sub>t</sub> + u·u<sub>x</sub> = ν·u<sub>xx</sub>　（非线性，难解，解出来是激波/间断）</div>
+等价地变成关于 φ 的<b>线性方程</b>（漂移-扩散）：
+<div class="box">φ<sub>t</sub> + 4·φ<sub>x</sub> = ν·φ<sub>xx</sub>　（线性方程，好解，高斯函数即精确解）</div>
+所以<b>根本不用解那个难的非线性方程</b>——只要取一个高斯形式的 φ，u 自动就是 Burgers 的精确解。
+（已用数值残差 u<sub>t</sub>+u·u<sub>x</sub>−ν·u<sub>xx</sub> 在网格上实跑验证：结果≈0，确认它确为精确解。）
+
+<h2>2. φ 为什么是两个高斯</h2>
+φ = e<sup>−(x−4t)²/4ν(t+1)</sup> + e<sup>−(x−4t−2π)²/4ν(t+1)</sup>
+<ul>
+<li>每一项都是一个以<b>速度 4 向右漂移</b>并同时扩散的高斯。</li>
+<li><b>两个指数 = 周期边界</b>：x∈[0,2π] 且 u(0)=u(2π)。第二个高斯中心在 x=4t+2π，模 2π 后和第一个落在同一位置，保证整个函数 2π 周期。</li>
+</ul>
+
+<h2>3. 公式里那个 "+4" 是什么</h2>
+它就是上面线性方程中高斯移动的<b>漂移速度 4</b>，必须和 φ 里高斯右移的速度一致——不是随便加的常数。验证表明只有这样 u 才严格满足 Burgers 方程。
+
+<h2>4. 为什么它既是"初值"又是"分析解"</h2>
+公式里 t 是自由变量：
+<ul>
+<li>代入 <code>t=0</code> → 得到 u(x,0)，这就是<b>初始条件</b>（撒在网格上的那条边值）。</li>
+<li>代入 <code>t=nt·dt</code> → 得到最终时刻的<b>精确解</b>。</li>
+</ul>
+所以画"分析曲线"时，<b>根本没解 PDE</b>，只是把同一个闭式公式在 t=nt·dt 处求值。<br>
+这也正是"为什么要有分析解对照"：用它当已知真相，检验你的数值格式对不对。
+
+<h2>5. 和前面那张对比图的关系</h2>
+t=0.44 时该精确解在 x≈4.7 处已演化出<b>陡峭前缘（激波）</b>；一阶迎风格式把它抹平，于是数值解在激波处失真（最大偏差 3.75），而平滑区与精确解几乎重合。这正是 Burgers 方程的招牌现象，也是这课用分析解来"照妖"的原因。
+
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 360" width="100%" role="img">
+  <text x="40" y="34" font-family="sans-serif" font-size="15" font-weight="500" fill="#2c2c2a">Hopf-Cole 变换：非线性 Burgers ⇄ 线性漂移-扩散</text>
+  <text x="40" y="58" font-family="sans-serif" font-size="13" fill="#5f5e5a">u = −2ν(ln φ)<sub>x</sub> + 4 把难解的非线性方程变成好解的线性方程</text>
+
+  <rect x="40" y="90" width="270" height="120" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+  <text x="175" y="122" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#A32D2D">Burgers 方程（非线性）</text>
+  <text x="175" y="150" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2c2c2a">u_t + u·u_x = ν·u_xx</text>
+  <text x="175" y="172" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#A32D2D">直接求解很难</text>
+  <text x="175" y="194" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2c2c2a">解出来是激波 / 间断</text>
+
+  <rect x="370" y="90" width="270" height="120" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+  <text x="505" y="122" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="500" fill="#3B6D11">φ 方程（线性）</text>
+  <text x="505" y="150" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2c2c2a">φ_t + 4·φ_x = ν·φ_xx</text>
+  <text x="505" y="172" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#3B6D11">线性方程，好解</text>
+  <text x="505" y="194" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2c2c2a">高斯函数即精确解</text>
+
+  <line x1="312" y1="138" x2="366" y2="138" stroke="#854F0B" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="339" y="130" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#854F0B">u → φ</text>
+  <line x1="368" y1="172" x2="314" y2="172" stroke="#185FA5" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <text x="341" y="190" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#185FA5">φ → u</text>
+
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#854F0B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  </defs>
+
+  <rect x="40" y="232" width="600" height="110" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="0.5"/>
+  <text x="56" y="258" font-family="sans-serif" font-size="12" fill="#2c2c2a">φ = 两个以速度 4 右移的高斯；u = −2ν/φ·∂φ/∂x + 4 是反变换</text>
+  <text x="56" y="280" font-family="sans-serif" font-size="12" fill="#2c2c2a">公式里的 +4 = 上面的漂移速度 4（必须一致，u 才满足 Burgers）</text>
+  <text x="56" y="302" font-family="sans-serif" font-size="12" fill="#2c2c2a">第二个高斯(+2π) 保证 x∈[0,2π] 的周期边界 u(0)=u(2π)</text>
+  <text x="56" y="324" font-family="sans-serif" font-size="12" fill="#2c2c2a">同一式子：t=0 是初值，t=nt·dt 是精确解 → 即“分析曲线”来源</text>
+</svg>
+<p class="note">图：Hopf-Cole 桥接。左侧是非线性 Burgers（难），右侧是线性 φ 方程（易，高斯即解），中间双向箭头即 u ↔ φ 的变换。</p>
+</div>
+
+<p class="note">验证脚本：<code>CFDPython学习/code/verify_burgers.py</code>（sympy 残差，因表达式过大内存溢出，改用数值版 <code>numeric_verify.py</code> 确认残差≈0）。</p>
+
+</body>
+</html>

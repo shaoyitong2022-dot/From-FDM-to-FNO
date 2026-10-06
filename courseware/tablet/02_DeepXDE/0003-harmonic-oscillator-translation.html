@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 18 章 · 阻尼振子手写 PyTorch 到 DeepXDE 对照迁移 · 声明式生态解剖</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷三：工业级开源计算框架 DeepXDE 深度实战</p>
+  <h1>第 18 章 · 阻尼振子手写 PyTorch 到 DeepXDE 对照迁移 · 声明式生态解剖</h1>
+  <p class="meta">字数约 7,000 ｜ 建议学时：80 分钟 ｜ 核心架构：逐行重构映射 · PointSetBC 数据驱动注入 · loss_weights 调平秘诀 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 经典算例的现代化工业重构</span>
+  <p><strong>承接上章：</strong>第 17 章我们彻底摸清了 DeepXDE 的 API 地图与 Hessian 索引规范。现在，我们用实战重构来检验掌握程度。</p>
+  <p><strong>本章实战使命：</strong><strong>将卷二原生手写的阻尼谐振子求解器平滑迁移至 DeepXDE，并解锁数据驱动边界 <code>PointSetBC</code>（Step C-0003）</strong>。</p>
+  <p>在卷二中，我们写了上百行 PyTorch 代码才搞定振子残差与初值保护；而在 DeepXDE 中，声明式架构仅需三十行即可完成更强大的全流程求解！更重要的是，本章将解锁科学计算的最强杀招——<strong>软约束实验数据融合（PointSetBC）</strong>：当物理系统不仅有方程，还包含几个宝贵的实验传感器采样点时，框架如何实现数理模型与真实数据的完美协奏？</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 建立手写 PyTorch 代码与 DeepXDE 高层 API 的逐行双向映射词典；<br>
+  ② 掌握 <code>PointSetBC</code> 算子无缝嵌入稀疏实验采样散点的标准流程；<br>
+  ③ 洞察 <code>loss_weights</code> 声明顺序颠倒引发的解冻结灾难（实测顺序对调导致全零平凡解）；<br>
+  ④ 产出数据与方程协同驱动的高保真欠阻尼振子收敛模型。
+</div>
+
+<h2>1 · 工业迁移法则：手写 PyTorch 与 DeepXDE 对照表</h2>
+
+<table>
+  <tr><th>功能逻辑</th><th>原生手写 PyTorch (卷二写法)</th><th>DeepXDE 声明式 (卷三写法)</th></tr>
+  <tr><td>时空连续域采样</td><td><code>t = torch.linspace(0, 5, 500, requires_grad=True)[:, None]</code></td><td><code>geom = dde.geometry.TimeDomain(0, 5)</code> 配合 <code>num_domain=500</code></td></tr>
+  <tr><td>一阶与二阶求导</td><td>两次调用 <code>torch.autograd.grad(..., create_graph=True)</code></td><td><code>dde.grad.jacobian(y, t)</code> 与 <code>dde.grad.hessian(y, t)</code></td></tr>
+  <tr><td>初值速度约束</td><td>额外保留 $t=0$ 导数图并计算 $(u_t(0) - v_0)^2$</td><td><code>dde.icbc.OperatorBC(geom, lambda x, y, _: dde.grad.jacobian(y, x), on_initial)</code></td></tr>
+  <tr><td>实验散点数据注入</td><td>手动筛选索引并加入数据 MSE 损失项</td><td><strong><code>dde.icbc.PointSetBC(t_meas, u_meas)</code></strong></td></tr>
+  <tr><td>训练外循环调度</td><td>手工写嵌套 <code>for epoch: loss.backward(); optimizer.step()</code></td><td><code>model.compile("adam"); model.train(iterations=N)</code></td></tr>
+</table>
+
+<h2>2 · 慢动作剖析：引入 PointSetBC 的工业级完整实现</h2>
+
+<pre><code>import deepxde as dde
+import numpy as np
+
+# 1. 物理系统参数与解析基准
+m, mu, k = 1.0, 0.4, 4.0
+gamma = mu / (2 * m)
+omega = np.sqrt(k / m - gamma**2)
+def exact_solution(t):
+    return np.exp(-gamma * t) * np.cos(omega * t)
+
+# 2. 几何时间域 [0, 5]
+geom = dde.geometry.TimeDomain(0.0, 5.0)
+
+# 3. 声明阻尼振子控制方程残差: m * y'' + mu * y' + k * y = 0
+def pde_oscillator(t, y):
+    y_t = dde.grad.jacobian(y, t, i=0, j=0)
+    y_tt = dde.grad.hessian(y, t, i=0, j=0)
+    return m * y_tt + mu * y_t + k * y
+
+# 4. 模拟外部传感器采集到的 5 个稀疏测量点
+t_sensor = np.array([[0.5], [1.2], [2.1], [3.3], [4.5]])
+u_sensor = exact_solution(t_sensor)
+
+# 5. 声明边界条件集合: 包含初始位移与实验传感器散点
+def on_initial(t, on_initial_pt):
+    return on_initial_pt
+
+bc_ic = dde.icbc.DirichletBC(geom, lambda t: 1.0, on_initial)
+bc_data = dde.icbc.PointSetBC(t_sensor, u_sensor)  # ★ 数据驱动注入
+
+# 6. 数据装配与网络声明
+data = dde.data.PDE(
+    geom, pde_oscillator, [bc_ic, bc_data],
+    num_domain=400,
+    num_boundary=2,
+    solution=exact_solution,
+    num_test=200
+)
+
+net = dde.nn.FNN([1] + [32] * 3 + [1], "tanh", "Glorot uniform")
+model = dde.Model(data, net)
+
+# 7. 编译优化器: 注意 loss_weights 顺序对应 [PDE, BC_IC, BC_DATA]
+# 必须给初值和传感器数据足够的惩罚权重，防止平凡解
+model.compile("adam", lr=1e-3, loss_weights=[1.0, 100.0, 100.0])
+losshistory, train_state = model.train(iterations=4000)</code></pre>
+
+<table>
+  <tr><th>组件</th><th>API 声明</th><th>物理职能</th><th>防错要点</th></tr>
+  <tr><td>传感器散点</td><td><code>dde.icbc.PointSetBC</code></td><td>将外部离散点作为软约束并入计算图</td><td>输入坐标与观测值形状必须严格对齐 <code>(N, 1)</code>。</td></tr>
+  <tr><td>加权配置</td><td><code>loss_weights=[1, 100, 100]</code></td><td>多任务平衡</td><td><strong>第一位永远是 PDE，后续按边界列表顺序一一对齐！</strong></td></tr>
+</table>
+
+<h2>3 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】DeepXDE 损失权重顺序颠倒导致解冻结实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>在 DeepXDE 中求解欠阻尼振子，引入外部稀疏观测数据 `PointSetBC`。在编译时设定：`model.compile('adam', lr=0.001, loss_weights=[1.0, 1e-4])`：</p>
+    <p><strong>【请你先猜】</strong>网络能够成功拟合观测数据吗？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>网络输出完全变成了一条几乎笔直的死线！对振幅衰减完全无动于衷！</p>
+    <p><strong>【物理与数值归因】</strong><br>DeepXDE 的 `loss_weights` 严格按照声明顺序绑定：第一位是 PDE 残差权重，第二位才是 PointSetBC 数据拟合权重！上面的写法将数据权重压缩了 10000 倍，而将 PDE 权重拉满，导致网络全力消灭方程残差从而塌陷为全零平凡解！正确配置必须反过来：`loss_weights=[1e-4, 1.0]`！</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>3.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在迁移初始速度条件 $\dot{u}(0) = 0$ 时，我们需要用到通用算子边界 <code>OperatorBC</code>。请补齐算子边界条件声明：</p>
+<pre><code># TODO [主动生成]: 声明初始速度导数等于 0 的 OperatorBC
+bc_velocity = dde.icbc.OperatorBC(
+    geom,
+    # 请传入 lambda 表达式，利用 dde.grad.jacobian 提取导数并减去目标值 0.0
+    # 参数签名: lambda x, y, _: ...
+)</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>bc_velocity = dde.icbc.OperatorBC(
+    geom,
+    lambda x, y, _: dde.grad.jacobian(y, x, i=0, j=0) - 0.0,
+    on_initial
+)</code></pre>
+    <p><strong>【底层机理解析】：</strong><code>OperatorBC</code> 允许将任意关于网络输出的高阶微分算子直接作为边界约束条件！框架在反向传播时会自动计算其二阶元梯度，极大地扩展了非传统边界（如对流换热 Robin 边界）的表达自由度。</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>3.3 物理先验与数据比例手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 欠阻尼能量耗散心智模型对齐</span>
+  <p><strong>【实验数据】：</strong>传感器在 $t=0$ 测得 $u(0)=1.0$，在半周期 $t=\pi/\omega pprox 1.57$ 测得谷值 $u(1.57) = -0.73$。<br>
+  物理方程：$\ddot{u} + \mu \dot{u} + 4u = 0$（质量为 1，刚度为 4，阻尼 $\mu$ 未知）。</p>
+  <p><strong>【手算反演任务】：</strong>仅凭这两个点的数据与微分方程，手动反推阻尼系数 $\mu$ 的近似真值。</p>
+  <details class="quiz">
+    <summary>▸ 查看反演推演解答</summary>
+    <div class="a">
+      1. 振幅包络按 $e^{-\gamma t}$ 衰减，在半周期处：$u(T/2) = -e^{-\gamma 	imes 1.57} = -0.73$；<br>
+      2. 两边取自然对数：$-\gamma 	imes 1.57 = \ln(0.73) pprox -0.3147 \implies \gamma pprox 0.20$；<br>
+      3. 由阻尼因子定义：$\gamma = \mu / (2m) \implies \mu = 2m \gamma = 2 	imes 1.0 	imes 0.20 = 0.40$！<br>
+      <strong>核心震撼：</strong>这就是<strong>物理逆问题反演（Inverse Problem）</strong>的数学雏形！PINN 也是通过将 $\mu$ 声明为可训练张量，在几秒钟内自动完成这种逆向高精反演！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位初学者在调用 <code>PointSetBC</code> 传入传感器数据时，传入了原生一维数组：</p>
+  <pre><code>t_data = np.array([0.5, 1.0, 1.5])       # 形状为 (3,)
+u_data = np.array([0.8, -0.2, -0.6])     # 形状为 (3,)
+bc = dde.icbc.PointSetBC(t_data, u_data)  # 抛出 ValueError 或训练中广播暴增</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出为什么科学计算神经网络要求输入永远保持两维矩阵 <code>(N, 1)</code>？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong>在深度学习张量运算中，一维形状 <code>(N,)</code> 是没有特征维度的模糊向量，无法区分是“1 个包含 N 维特征的样本”还是“N 个包含 1 维特征的样本”。当与网络前向输出 <code>(N, 1)</code> 做均方差时，极易引发广播生成 $N 	imes N$ 的灾难性膨胀矩阵，导致 Loss 计算彻底失真。</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>t_data = t_data[:, None]  # 显式升维为 (3, 1)
+u_data = u_data[:, None]
+bc = dde.icbc.PointSetBC(t_data, u_data)</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>4 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  工业框架是轮子，但握住方向盘的永远是对物理守恒的敬畏！
+</div>
+
+<h3>4.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>把一个自己手搓的代码换成工业级开源库，我们图的到底是什么？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>模块化、工程解耦、框架重构、抽象泄漏、生态</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “就像我们造马车，手搓代码相当于自己去森林里伐木、锯轮子、打铁钉，虽然能跑但每次换个车轮都要从头打铁。换成工业级套件就像直接去标准零件库组装，车轮底盘全都按国际标准严丝合缝，省下打铁的时间专门用来调试去往各地的导航路线。”
+    </div>
+  </details>
+</div>
+
+<h3>4.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当阻尼系数 $\mu 	o 0$ 时，系统能量严格守恒，相空间轨迹闭合为一个永远不收缩的对称正椭圆。</li>
+  <li><strong>极限二（趋近无穷大时）：</strong>当阻尼系数 $\mu 	o \infty$ 时，系统进入过阻尼死滞状态，完全失去一切波动性，直接单调指数衰减归零。</li>
+  <li><strong>极限三（物理实测噪声极限）：</strong>现实中传感器必然包含测量噪声。若 PointSetBC 权重给得过高（如 $10^6$），模型会强行扭曲自身去迎合噪声毛刺；合理的权重应该让物理方程充当低通滤波器，过滤掉传感器的高频白噪声。</li>
+</ul>
+
+<h3>4.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>既然 PointSetBC 能够直接喂真实数据，那我们干脆喂它 100 万个传感器测点，不就轻而易举战无不胜了吗？</p>
+  <p><strong>【真实底层】：</strong>如果你真的有 100 万个密密麻麻的高精度测点，你根本不需要用 PINN！直接用最传统的纯数据驱动卷积网络或者经典插值法，速度又快又准！<strong>PINN 的核心神圣价值，恰恰是在极度数据饥饿（例如整个流场只有 3~5 个传感器）的绝境下，凭借物理定律的强力先验，逆向重建出全时空的高保真连续流场！</strong>千万不要在富数据场景里硬套 PINN 陷入形式主义。</p>
+</div>
+
+<h2>5 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>双轨复刻验证：手写 PyTorch 与 DeepXDE 预测曲线像素级对齐！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>DEEPXDE-0003</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/pinn/p03_harmonic_deepxde.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/pinn/p03_harmonic_deepxde.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>手写 PyTorch 曲线、DeepXDE 预测曲线与欠阻尼振子解析基准三线重合图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证手写内核平滑迁移至声明式工业框架，PointSetBC 成功融合稀疏传感器数据</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>全时域相对 L2 范数误差 $< 0.05$，4000 步训练收敛，数据与数理协同契合</strong></td></tr>
+</table>
+
+<h2>6 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情大推进：时空统一建模与时空激波！</span>
+  <p>我们已经熟练掌握了常微分动力系统的工业迁移与数据融合。现在，是时候向更宏伟的偏微分非线性系统发起总攻了！</p>
+  <p>下一章我们将进入 <strong>第 19 章 · 时空 Burgers 方程与时空激波 PINN</strong>！我们将引入 DeepXDE 的王牌几何体——<code>GeometryXTime</code>，彻底颠覆一秒一秒时间推进的传统认知，将时间作为第四空间维度进行全时空流形统一连续建模！你将在此亲眼见证，神经网络如何在没有网格的状态下，直接捕获剧烈运动的粘性激波（Shock Wave）！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对手写代码到 DeepXDE 迁移及 PointSetBC 数据注入机制已彻底吃透，请对我进行口试审查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0002-api-map.html">← 第 17 章 · DeepXDE 五件套 API 全景地图</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0004-burgers-main.html">第 19 章 · 时空 Burgers 方程与时空激波 PINN →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷三：工业级开源计算框架 DeepXDE 深度实战</p>
+</footer>
+
+</div>
+</body>
+</html>

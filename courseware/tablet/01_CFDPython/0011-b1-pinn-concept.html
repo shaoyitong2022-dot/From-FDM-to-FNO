@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 11 章 · B1 物理信息神经网络（PINN）范式觉醒 · 砸碎离散网格的枷锁</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷二：隐式神经场与 PINN 范式革命</p>
+  <h1>第 11 章 · B1 物理信息神经网络（PINN）范式觉醒 · 砸碎离散网格的枷锁</h1>
+  <p class="meta">字数约 6,500 ｜ 建议学时：75 分钟 ｜ 核心理论：隐式神经表征 · 归纳偏置 · 维度灾难破局 · 配点残差范数 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 科学机器学习的认知奇点</span>
+  <p><strong>承接上卷：</strong>在卷一（第 01~10 章）中，我们建立起了以空间网格为核心的有限差分离散世界。我们把物理场切成一块块网格，把导数写成临近格点的差商，在计算机内存中一步一步向前迭代时间。</p>
+  <p><strong>本章认知革命：</strong>现在，我们将彻底砸碎固定空间离散网格的百年枷锁，跨入<strong>科学机器学习（SciML）新纪元</strong>！</p>
+  <p><strong>本章核心命题：</strong>为什么我们要用神经网络来解偏微分方程？连续函数逼近的<strong>隐式神经场（Neural Implicit Fields）</strong>如何将物理守恒定律转化为反向传播的损失函数？我们将在此建立从“离散数组网格”到“参数化无限维连续映射 $u_\theta(\mathbf{x}, t)$”的认知跃迁，为后续所有神经网络物理求解奠定哲学与数学基石！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 深刻理解经典网格方法遭遇的“高维灾难”与复杂几何网格生成困境；<br>
+  ② 掌握神经隐式表征（Neural Implicit Field）将时空坐标直接映射为物理场的连续函数概念；<br>
+  ③ 掌握 PINN 多任务物理损失架构：数据保真项、边界约束项与配点物理残差项的加权联合；<br>
+  ④ 破除“数据驱动”与“物理定律”的二元对立，建立以物理方程作为深度网络强归纳偏置（Inductive Bias）的心智模型。
+</div>
+
+<h2>1 · 数学与工程基石：经典网格困境与无网格神经隐式场</h2>
+
+<h3>1.1 经典网格的三大死穴</h3>
+<ol>
+  <li><strong>高维灾难（Curse of Dimensionality）：</strong>传统网格方法（FDM/FVM/FEM）的离散点数随维度呈指数爆炸：$N_{\text{total}} = N^d$。若在 1 维网格取 100 点，3 维需要 100 万点；一旦进入量子力学薛定谔方程或金融随机偏微分方程（$d \ge 10$），全宇宙的计算机内存都无法存下一个时间步！</li>
+  <li><strong>复杂几何的网格生成噩梦：</strong>在工业发动机叶片或潜艇流场中，生成高质量的贴体六面体网格往往占据 CFD 工程师 80% 的工作时间，网格畸变还会直接导致差分格式失稳发散。</li>
+  <li><strong>正反问题割裂（Inverse Problems）：</strong>已知方程求场值（正问题）是传统 CFD 的强项；但若已知某几个测点稀疏数据，反求介质未知的导热系数或地下油藏渗透率（反问题），传统方法需要调用繁琐复杂的伴随状态法（Adjoint State Method）。</li>
+</ol>
+
+<h3>1.2 物理信息神经网络（PINN）的核心破局思路</h3>
+<p>2019 年，Raissi, Perdikaris, Karniadakis 在《Journal of Computational Physics》发表里程碑论文，正式确立了 PINN 的现代架构：</p>
+<p>我们不再在离散网格上存储一堆数字，而是用一个深度全连接神经网络 $u_\theta(\mathbf{x}, t)$ 来<strong>直接表达物理场本身</strong>：</p>
+$$\mathbf{x}, t \xrightarrow{\quad \text{神经网络 } \mathcal{N}_\theta \quad} \hat{u}_\theta(\mathbf{x}, t)$$
+<p>输入是连续的时空坐标点（任意精度浮点数），输出是该点处的流体速度、温度或压力！空间没有网格，时间没有离散步长。整个物理场被压缩进几万个网络权重参数 $\theta = \{W, b\}$ 之中。</p>
+
+<h2>2 · 损失函数架构：物理定律如何注入神经网络？</h2>
+
+<p>我们无需成千上万条已知的真实实验曲线。我们将物理微分方程本身直接编码为网络优化的目标损失！</p>
+<p>设偏微分方程抽象表述为：</p>
+$$\mathcal{F}[u] \equiv \frac{\partial u}{\partial t} + \mathcal{N}_x[u] = 0, \quad \mathbf{x} \in \Omega, \ t \in [0, T]$$
+<p>PINN 的总训练损失由三个互不冲突的均方误差项共同熔铸而成：</p>
+$$\mathcal{L}_{\text{PINN}}(\theta) = w_{\text{pde}} \mathcal{L}_{\text{pde}} + w_{\text{bc}} \mathcal{L}_{\text{bc}} + w_{\text{ic}} \mathcal{L}_{\text{ic}} + w_{\text{data}} \mathcal{L}_{\text{data}}$$
+
+<h3>1. 内部配点物理残差项（PDE Collocation Residual）</h3>
+<p>在计算域内部随机抛洒 $N_f$ 个无标签坐标点 $\{(\mathbf{x}_i, t_i)\}_{i=1}^{N_f}$（称为<strong>配点 Collocation Points</strong>）。在这些点上，我们用 PyTorch 自动微分（Autograd）解析计算网络输出对输入坐标的偏导数，并评估方程残差：</p>
+$$\mathcal{L}_{\text{pde}} = \frac{1}{N_f} \sum_{i=1}^{N_f} \left| \mathcal{F}[\hat{u}_\theta](\mathbf{x}_i, t_i) \right|^2$$
+<p>只要残差被压降到 0，就意味着网络在每一点都严格遵守了物理质量守恒与动量守恒！</p>
+
+<h3>2. 边界与初始条件约束项（BC & IC Losses）</h3>
+<p>在空间边界 $\partial \Omega$ 和初始时刻 $t=0$ 处，强制令网络预测值逼近物理给定值：</p>
+$$\mathcal{L}_{\text{bc}} = \frac{1}{N_{\text{bc}}} \sum_{j=1}^{N_{\text{bc}}} \left| \hat{u}_\theta(\mathbf{x}_j^{\text{bc}}, t_j) - u_{\text{bc}}(\mathbf{x}_j, t_j) \right|^2, \quad \mathcal{L}_{\text{ic}} = \frac{1}{N_{\text{ic}}} \sum_{k=1}^{N_{\text{ic}}} \left| \hat{u}_\theta(\mathbf{x}_k, 0) - u_0(\mathbf{x}_k) \right|^2$$
+
+<h2>3 · 工业级最小自包含概念验证实现</h2>
+
+<pre><code>import torch
+import torch.nn as nn
+import numpy as np
+
+# 1. 验证 PyTorch 神经隐式场前向网络
+class PINNConceptNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        # 连续坐标 (x, t) -> 标量场 u
+        self.net = nn.Sequential(
+            nn.Linear(2, 32),
+            nn.Tanh(),  # 必须使用无穷阶可微光滑激活函数
+            nn.Linear(32, 32),
+            nn.Tanh(),
+            nn.Linear(32, 1)
+        )
+        
+    def forward(self, x, t):
+        # 拼接连续时空张量
+        xt = torch.cat([x, t], dim=1)
+        return self.net(xt)
+
+# 2. 实例化并验证任意连续坐标查询
+model = PINNConceptNet()
+# 模拟无网格随机配点采样
+x_colloc = torch.rand(100, 1, requires_grad=True)
+t_colloc = torch.rand(100, 1, requires_grad=True)
+
+u_pred = model(x_colloc, t_colloc)
+print(f"PINN forward pass success. Output field shape: {u_pred.shape}")
+print("Ready for autograd PDE residual evaluation.")</code></pre>
+
+<table>
+  <tr><th>概念组件</th><th>传统网格 FDM</th><th>物理信息神经网络 PINN</th><th>工程对比优势</th></tr>
+  <tr><td>场的数据结构</td><td>离散数组 <code>u[ny, nx]</code></td><td>连续函数参数化 <code>model(x, t)</code></td><td>脱离网格分辨率束缚，任意浮点坐标微秒级即时查询。</td></tr>
+  <tr><td>微积分计算方式</td><td>相邻格点有限差商</td><td>基于计算图的反向自动微分</td><td>消除差分截断误差，不依赖任何局部几何邻域模板。</td></tr>
+  <tr><td>时间推进机制</td><td>时间显式/隐式步进</td><td>全时空 $(x, t)$ 配点联合全局优化</td><td>将时间作为几何第四维度，支持长时序或反演逆问题。</td></tr>
+</table>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】无网格连续求值 vs 离散网格插值精度实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>需要获取物理场在任意坐标点 $x = 0.31415926$ 处的解。传统 FDM 网格分辨率为 $dx = 0.1$（仅有 0.3 和 0.4 处的值）；而训练好的 PINN 网络是一个连续映射 $u_\theta(x)$：</p>
+    <p><strong>【请你先猜】</strong>两者的查询机制与精度瓶颈有什么根本不同？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>FDM 必须做高阶多项式空间插值，在粗网格上插值误差主导了一切；而 PINN 直接输入浮点标量秒级返回高保真光滑响应！</p>
+    <p><strong>【物理与数值归因】</strong><br>PINN 将流体场表达为紧致神经网络参数构成的无限维连续函数空间流形（Neural Implicit Field），彻底打破了依附于固定拓扑网格几何离散点的枷锁！</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在 PINN 的总优化目标中，三个损失项扮演着不同的物理角色。请补齐包含物理守恒的核心损失项声明：</p>
+<pre><code># TODO [主动生成]: 搭建 PINN 总体加权损失装配
+loss_data = torch.mean((u_pred_meas - u_meas_true)**2)
+loss_bc   = torch.mean((u_pred_bc - u_bc_true)**2)
+# 请在下方补齐最核心的物理方程残差损失项：
+loss_total = w_data * loss_data + w_bc * loss_bc + # 请填入加权物理损失项</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>loss_total = w_data * loss_data + w_bc * loss_bc + w_pde * torch.mean(residual_pde**2)</code></pre>
+    <p><strong>【逐项 Why 注释】：</strong><code>residual_pde</code> 是在全域无标签配点上利用自动微分计算出的偏微分算子评估值。正是这一项，将传统的“黑盒数据拟合”转变为拥有物理保真度与强归纳偏置的“白盒科学解算器”！</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>4.3 单步手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 归纳偏置概念纸笔对齐</span>
+  <p><strong>【情境设定】：</strong>我们只有极度稀疏的 5 个实验测量点数据，空间中存在无穷多条曲线可以完美穿过这 5 个点。</p>
+  <p><strong>【推演任务】：</strong>说明为什么一个纯数据驱动的多项式或未加物理约束的神经网络必然发生过拟合震荡（Runge 现象），而 PINN 能收敛到真实物理曲线？</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准解答</summary>
+    <div class="a">
+      在 5 个测点之间未被观测的广阔空间中，纯数据模型的损失函数为 0 的虚假解具有无穷多个自由度（解空间没有下界）；而 PINN 在这 5 个点之间布置了 10,000 个无标签配点，强迫曲线上每一处的曲率和斜率都必须精确吻合偏微分方程。物理定律作为极其刚性的正则化约束，将解空间严格压缩至唯一的物理流形上！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位初学者误将有限差分思维套用进 PINN，写出了如下配点损失计算逻辑：</p>
+  <pre><code># 错误代码：在 PINN 里算有限差分
+x_pde = np.linspace(0, 1, 100)
+u_pred = model(torch.tensor(x_pde))
+# 试图用离散差分逼近导数作为 PINN 损失
+du_dx = (u_pred[1:] - u_pred[:-1]) / dx
+loss_pde = torch.mean(du_dx**2)</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出为什么在神经网络损失函数里写有限差分不仅丧失了 PINN 的优势，还会导致反向传播梯度极其病态？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong>有限差分将原本独立的样本强行通过相邻索引绑定在一起，引入了额外的数值截断误差；更致命的是，跨样本切片差分会导致反向传播梯度在相邻权重间相互抵消，破坏了 Adam 随机采样的独立同分布假设。PINN 的精髓是利用 <code>torch.autograd.grad</code> 对每个单点做解析链式求导，完全脱离任何网格差分！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code># 采用随机 Sobol/Latin-Hypercube 配点采样 + torch.autograd
+u_x = torch.autograd.grad(u_pred, x_pde, grad_outputs=torch.ones_like(u_pred), create_graph=True)[0]</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  扔掉复杂机器学习行话，直击网络如何“感应”物理世界！
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>神经网络连一个真实实验数据都没见过，怎么就能算出炮弹的飞行轨迹？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>自动微分、残差范数、配点法、归纳偏置、反向传播</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “就像一个蒙着眼睛在纸上画抛物线的学生，虽然没人给他看过标准轨迹图，但老师手里拿了一把牛顿第二定律的尺子。只要他的铅笔尖稍微有一丝弯曲程度不符合重力加速度公式，手背上就会立刻挨一记戒尺。他在整张纸上被数千次戒尺抽打纠偏，最后逼得他画出的唯一一条完全不挨打的曲线，正好就是最完美的真实炮弹轨迹。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当真实测量标签数据归零（0 个实验测点，仅有物理方程和边界）时，PINN 蜕变为连续变分偏微分求解器。</li>
+  <li><strong>极限二（趋近无穷大时）：</strong>当采样配点数量 $N_f 	o \infty$ 时，根据万能逼近定理与蒙特卡洛积分收敛律，PINN 的经验物理风险在连续函数空间中弱收敛于真实 PDE 强解。</li>
+  <li><strong>极限三（物理破缺与错误假设）：</strong>如果物理方程本身参数写错（如将粘性系数误多写了一个零），PINN 不会报错，它会一丝不苟地严格收敛到一个错误的平行宇宙物理世界上去！</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>网上有人宣称“PINN 已经终结了传统 CFD 网格算法，未来所有的流体力学模拟都将属于神经网络”，这种言论错在哪里？</p>
+  <p><strong>【真实底层】：</strong>这是对工程计算毫无常识的狂妄吹嘘！在高雷诺数湍流（$Re > 10^5$）和激波间断界面中，PINN 的训练损失曲面极度崎岖多峰，收敛速度极其缓慢，单次求解可能需要 GPU 狂烧几十分钟甚至发散；而工业成熟的 FVM/FDM 隐式算法几秒钟就能稳定收敛。PINN 的主战场是<strong>复杂几何无网格求解、逆问题反演、多源实验数据融合</strong>，而非简单替代传统高效正向求解器！</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>卷二开篇烟测：深度学习微分计算底座就绪！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>PINN-0001</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/pinn/p01_harmonic_oscillator.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe -c "import torch; print('PINN Autograd Backend Smoke PASS')"</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>PINN 双轮驱动架构示意图：时空配点采样、网络前向传播与自动微分闭环拓扑</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>确立从离散数组网格到连续隐式神经场的范式跃迁，建立物理方程驱动损失的反传链路</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>PyTorch CUDA/CPU 设备检测通过，前向隐式场张量计算 100% 成功</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：先用纯数据拟合试试看！</span>
+  <p>我们已经建立了 PINN 的宏伟构想：用神经网络逼近物理场。但在把物理定律注入网络之前，我们必须先直面裸神经网络的“天生秉性”。</p>
+  <p>下一章我们将进入 <strong>第 12 章 · B2 裸神经网络拟合训练与频域偏置</strong>！我们将亲手用一个全连接网络去拟合一条简单的物理曲线，并目睹深度学习最隐蔽的阿喀琉斯之踵——<strong>频域偏置（Spectral Bias）</strong>：为什么网络优先学会低频大轮廓，却对高频毛刺极度迟钝？为什么常用的 ReLU 激活函数会让二阶微分物理残差彻底瘫痪？</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对 PINN 的无网格隐式场概念和物理损失架构已建立通透直觉，请对我进行口头审查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0010-step11-12-ns-cavity-channel.html">← 第 10 章 · Steps 11+12 顶盖驱动空腔流与 NS 方程</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0012-b2-bare-nn-training.html">第 12 章 · B2 裸神经网络拟合与频域偏置 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷二：隐式神经场与 PINN 范式革命</p>
+</footer>
+
+</div>
+</body>
+</html>

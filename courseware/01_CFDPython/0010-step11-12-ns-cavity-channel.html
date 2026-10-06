@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 10 章 · Steps 11+12 顶盖驱动空腔流与不可压缩 Navier-Stokes 投影法</title>
+<link rel="stylesheet" href="../assets/course.css">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷一：有限差分与经典流体底座</p>
+  <h1>第 10 章 · Steps 11+12 顶盖驱动空腔流与不可压缩 Navier-Stokes 投影法</h1>
+  <p class="meta">字数约 8,500 ｜ 建议学时：100 分钟 ｜ 经典算法：Chorin 投影法 · Helmholtz-Hodge 分解 · Ghia 1982 基准 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 卷一终局巅峰：不可压缩 Navier-Stokes 方程</span>
+  <p><strong>承接上章：</strong>第 01~08 章教会了我们如何向前步进动量对流与扩散，第 09 章教会了我们如何松弛求解全域压力泊松方程。所有伏笔，皆在今日收束！</p>
+  <p><strong>本章物理母题：</strong>人类流体力学最伟大的控制方程——<strong>二维非定常不可压缩 Navier-Stokes 方程（Steps 11 & 12）</strong>：</p>
+  $$\frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u} \cdot \nabla) \mathbf{u} = -\frac{1}{\rho} \nabla p + \nu \nabla^2 \mathbf{u}$$
+  $$\nabla \cdot \mathbf{u} = 0 \quad (\text{质量守恒与无散度不可压缩约束})$$
+  <p>这是整部《计算物理》卷一的终极王冠！你将在此直面不可压缩流体最致命的数学死锁：<strong>方程组里根本没有直接求压力的演化方程！</strong>你将掌握图灵奖级别物理学家 Alexandre Chorin 发明的<strong>分裂投影法（Projection Method）</strong>，利用 Helmholtz-Hodge 分解定理，在 41×41 的方寸网格上驯服狂暴的顶盖空腔回流旋涡（Lid-driven Cavity Flow），并与 Ghia et al. (1982) 的世界权威实验基准展开像素级对齐！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 洞悉不可压缩 Navier-Stokes 方程中压力的本质——作为强制约束散度归零的拉格朗日乘子；<br>
+  ② 掌握 Chorin 投影法两步分解架构：动量项预测步 $\mathbf{u}^*$ 与散度正交压力修正投影步；<br>
+  ③ 掌握同位网格（Collocated Grid）上压力泊松方程源项构造与 Neumann 壁面压力边界条件；<br>
+  ④ 完整运行 $Re=100$ 顶盖空腔流动，提取中截面垂直速度分布，完成与 Ghia 1982 基准的严格误差闭环！
+</div>
+
+<h2>1 · 数学物理基石：不可压缩的深渊与 Helmholtz-Hodge 分解</h2>
+
+<h3>1.1 压力的真正身份：无所不在的隐形监工</h3>
+<p>在可压缩空气动力学中，气体有状态方程 $p = \rho R T$，压力直接由密度和温度代数给出。但在不可压缩水动力学中，密度 $\rho = \text{const}$，连续性方程蜕变为了一个严格的几何运动学约束：</p>
+$$\nabla \cdot \mathbf{u} = \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = 0$$
+<p>这意味着：在任意时刻、流场中任意一个无限小微团，流入的体积必须不多不少严格等于流出的体积！</p>
+<p>那么压力 $p$ 究竟是什么？在数学上，<strong>压力根本不是热力学状态量，而是为了强行把速度场束缚在无散度约束流形上所必须引入的拉格朗日乘子（Lagrange Multiplier）！</strong>哪里试图汇聚变密，哪里就瞬间爆发出无限高的压力梯度将流体狠狠推开。</p>
+
+<h3>1.2 Helmholtz-Hodge 分解定理：投影法的数学灵魂</h3>
+<p>1968 年，Alexandre Chorin 基于伟大的矢量微积分分解定理构建了流体力学投影法：</p>
+<div class="box deepen">
+  <span class="box-title">◆ Helmholtz-Hodge 分解定理</span>
+  任意平滑矢量场 $\mathbf{u}^*$，都可以唯一正交分解为一个<strong>严格无散度的螺线矢量场（Soleneidal Field）$\mathbf{u}^{n+1}$</strong> 与一个<strong>纯标量场的无旋梯度（Gradient of a Scalar Potential）$\nabla \phi$</strong> 之和：
+  $$\mathbf{u}^* = \mathbf{u}^{n+1} + \nabla \phi$$
+</div>
+<p>Chorin 的破局思路极其绝妙：</p>
+<ol>
+  <li><strong>预测步（扔掉压力）：</strong>先暂时假装压力不存在，只由对流项与粘性扩散项前向推进，算出一个临时带散度的速度预测场 $\mathbf{u}^*$；</li>
+  <li><strong>泊松求解步：</strong>对分解式两端取散度：$\nabla \cdot \mathbf{u}^* = \nabla \cdot \mathbf{u}^{n+1} + \nabla^2 \phi$。强制令最终物理速度无散度 $\nabla \cdot \mathbf{u}^{n+1} = 0$，立即导出<strong>压力泊松方程</strong>：
+  $$\nabla^2 p = \frac{\rho}{\Delta t} \nabla \cdot \mathbf{u}^*$$
+  </li>
+  <li><strong>正交投影修正步：</strong>求解出压力场 $p$ 后，用其梯度将预测速度投影回物理流形：
+  $$\mathbf{u}^{n+1} = \mathbf{u}^* - \frac{\Delta t}{\rho} \nabla p$$
+  </li>
+</ol>
+
+<h2>2 · 慢动作离散化：压力泊松源项与边界条件</h2>
+
+<h3>2.1 压力泊松方程右端项的连续展开</h3>
+<p>为了在同位网格上获得最佳鲁棒性，将动量对流散度展开代入泊松右端项，得到经典 Barba/CFD 展开形式：</p>
+$$\nabla^2 p = \rho \left[ \frac{1}{\Delta t} \left( \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right) - \left( \frac{\partial u}{\partial x} \right)^2 - 2 \frac{\partial u}{\partial y} \frac{\partial v}{\partial x} - \left( \frac{\partial v}{\partial y} \right)^2 \right]$$
+<p>第一项 $\frac{1}{\Delta t} \nabla \cdot \mathbf{u}^*$ 具有极强烈的工程现实意义——它是<strong>数值惩罚阻尼项</strong>，专门用来在每个时步动态消除由于离散截断误差引发的微小散度漂移；后续三项则是流体惯性剪切张量所产生的真实物理动态压力源。</p>
+
+<h3>2.2 顶盖驱动空腔（Lid-driven Cavity）的物理边界条件</h3>
+<p>计算域为一个 $1\text{m} \times 1\text{m}$ 的封闭正方形方腔：</p>
+<ul>
+  <li><strong>顶盖边界 ($y=1$)：</strong>以恒定速度沿水平向右拖拽流体：$u(x, 1) = 1.0, v(x, 1) = 0$；</li>
+  <li><strong>底边与侧壁 ($y=0, x=0, x=1$)：</strong>固定无滑移壁面（No-slip Wall）：$u = 0, v = 0$；</li>
+  <li><strong>压力边界条件：</strong>壁面处速度为常数，法向加速度为 0，由动量方程在边界处法向投影可知法向压力梯度必须归零（齐次诺伊曼边界条件）：
+  $$\left. \frac{\partial p}{\partial y} \right|_{\text{top, bottom}} = 0, \quad \left. \frac{\partial p}{\partial x} \right|_{\text{left, right}} = 0$$
+  </li>
+</ul>
+
+<h2>3 · 工业级最小自包含实现：顶盖驱动空腔求解器</h2>
+
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+# 1. 空间与流体参数配置
+nx, ny = 41, 41
+Lx, Ly = 2.0, 2.0
+dx = Lx / (nx - 1)
+dy = Ly / (ny - 1)
+rho = 1.0
+nu = 0.1      # 雷诺数 Re = U * L / nu = 1.0 * 2.0 / 0.1 = 20
+dt = 0.001
+nt = 500
+nit = 50      # 压力泊松内迭代松弛步数
+
+u = np.zeros((ny, nx))
+v = np.zeros((ny, nx))
+p = np.zeros((ny, nx))
+b = np.zeros((ny, nx))
+
+# 2. 时间步进大循环
+for n in range(nt):
+    un = u.copy()
+    vn = v.copy()
+    
+    # 2.1 构造压力泊松方程源项 b(x,y)
+    b[1:-1, 1:-1] = rho * (1 / dt * ((un[1:-1, 2:] - un[1:-1, :-2]) / (2 * dx) + 
+                                     (vn[2:, 1:-1] - vn[:-2, 1:-1]) / (2 * dy)) -
+                           ((un[1:-1, 2:] - un[1:-1, :-2]) / (2 * dx))**2 - 
+                           2 * ((un[2:, 1:-1] - un[:-2, 1:-1]) / (2 * dy) * 
+                                (vn[1:-1, 2:] - vn[1:-1, :-2]) / (2 * dx)) - 
+                           ((vn[2:, 1:-1] - vn[:-2, 1:-1]) / (2 * dy))**2)
+                           
+    # 2.2 压力泊松方程内迭代松弛
+    for q in range(nit):
+        pn = p.copy()
+        p[1:-1, 1:-1] = (((pn[1:-1, 2:] + pn[1:-1, :-2]) * dy**2 + 
+                          (pn[2:, 1:-1] + pn[:-2, 1:-1]) * dx**2 - 
+                          b[1:-1, 1:-1] * dx**2 * dy**2) / (2 * (dx**2 + dy**2)))
+        # 齐次诺伊曼压力边界: dp/dx = 0, dp/dy = 0
+        p[:, -1] = p[:, -2]  # 右壁
+        p[0, :] = p[1, :]    # 底壁
+        p[:, 0] = p[:, 1]    # 左壁
+        p[-1, :] = 0.0       # 顶盖处锚定参考零势点
+        
+    # 2.3 动量推进与压力正交投影修正
+    u[1:-1, 1:-1] = (un[1:-1, 1:-1] - 
+                     un[1:-1, 1:-1] * dt / dx * (un[1:-1, 1:-1] - un[1:-1, :-2]) - 
+                     vn[1:-1, 1:-1] * dt / dy * (un[1:-1, 1:-1] - un[:-2, 1:-1]) - 
+                     dt / (2 * rho * dx) * (p[1:-1, 2:] - p[1:-1, :-2]) + 
+                     nu * dt / dx**2 * (un[1:-1, 2:] - 2 * un[1:-1, 1:-1] + un[1:-1, :-2]) + 
+                     nu * dt / dy**2 * (un[2:, 1:-1] - 2 * un[1:-1, 1:-1] + un[:-2, 1:-1]))
+                     
+    v[1:-1, 1:-1] = (vn[1:-1, 1:-1] - 
+                     un[1:-1, 1:-1] * dt / dx * (vn[1:-1, 1:-1] - vn[1:-1, :-2]) - 
+                     vn[1:-1, 1:-1] * dt / dy * (vn[1:-1, 1:-1] - vn[:-2, 1:-1]) - 
+                     dt / (2 * rho * dy) * (p[2:, 1:-1] - p[:-2, 1:-1]) + 
+                     nu * dt / dx**2 * (vn[1:-1, 2:] - 2 * vn[1:-1, 1:-1] + vn[1:-1, :-2]) + 
+                     nu * dt / dy**2 * (vn[2:, 1:-1] - 2 * vn[1:-1, 1:-1] + vn[:-2, 1:-1]))
+                     
+    # 2.4 物理壁面无滑移边界条件
+    u[0, :] = 0.0; u[:, 0] = 0.0; u[:, -1] = 0.0
+    u[-1, :] = 1.0  # ★ 顶盖以 U=1.0 向右拖拽
+    v[0, :] = 0.0; v[-1, :] = 0.0; v[:, 0] = 0.0; v[:, -1] = 0.0
+
+print(f"Cavity flow completed. Center vortex formed! Max U: {np.max(u):.4f}")</code></pre>
+
+<table>
+  <tr><th>参数 / 语法</th><th>物理数学含义</th><th>典型值</th><th>敏感性分析与工程防错</th></tr>
+  <tr><td><code>nit = 50</code></td><td>压力泊松内循环松弛步数</td><td>50</td><td>必须确保每个时间步压力充分收敛，否则散度累积会导致流场膨胀失控。</td></tr>
+  <tr><td><code>p[-1, :] = 0.0</code></td><td>基准参考点电位钉扎</td><td>0.0</td><td>泊松全诺伊曼边界下解相差任意常数，必须锚定至少一个点消除奇异性。</td></tr>
+  <tr><td><code>u[-1, :] = 1.0</code></td><td>顶盖剪切驱动驱动源</td><td>1.0 [m/s]</td><td>整个封闭方腔流动动量的唯一输入源，通过粘性摩擦层层向下渗透。</td></tr>
+  <tr><td><code>b</code> 中的散度差分</td><td>散度修正惩罚项</td><td>包含 $1/\Delta t$</td><td>动态抑制数值截断误差引起的局部质量微观泄漏。</td></tr>
+</table>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】雷诺数升高引发主旋涡中心空间位移实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>在顶盖驱动空腔中，上盖以速度 1.0 向右滑动。当我们将流体粘性系数缩小 10 倍（雷诺数从 $Re = 100$ 飙升至 $Re = 1000$）并等待系统达到稳态：</p>
+    <p><strong>【请你先猜】</strong>腔内最大的那颗主回流旋涡中心会往哪里移动？向右上角靠近，还是向正中央下落？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>主涡中心从原本偏向右上角的位置，稳步向方腔正几何物理中心 $(0.5, 0.5)$ 回落！同时在方腔的左下角与右下角，清晰生出了两对微小的次级逆向三角分离涡！</p>
+    <p><strong>【物理与数值归因】</strong><br>在极低雷诺数（粘性主导）时，上盖板的剪切动量刚传递下来就被强粘性急剧耗散，能量聚集在右上角；当雷诺数达到 1000 时，惯性对流彻底压制粘性，流体在方腔内部形成了高速旋转的准刚体旋转无粘核心区（Inviscid Core），将主涡中心牢牢吸附锁定在正中央，并在剧烈剪切的下角隅激发边界层分离（Corner Secondary Vortices）。</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在 Chorin 投影法中，修正步利用刚算出的压力梯度修正预测速度。请补齐纵向速度 $v$ 的压力投影修正行：</p>
+<pre><code># TODO [主动生成]: 针对内部点 [1:-1, 1:-1]，用中心差分压力梯度修正 v 场
+v[1:-1, 1:-1] = v_star[1:-1, 1:-1] - # 请填入压力梯度投影项（包含 dt, rho, dy）</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>v[1:-1, 1:-1] = v_star[1:-1, 1:-1] - (dt / (2 * rho * dy)) * (p[2:, 1:-1] - p[:-2, 1:-1])</code></pre>
+    <p><strong>【逐项 Why 注释】：</strong>根据动量守恒，$\partial_t v = -\frac{1}{\rho} \frac{\partial p}{\partial y}$。离散时间推进乘以 $\Delta t$；压力梯度在竖直 $y$ 方向（行方向）采用二阶中心差分，分母为 $2\Delta y$。负号意味着流体永远从高压区被狠狠推向低压区！</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>4.3 单步离散手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 纸笔手算心智模型对齐</span>
+  <p><strong>【初始局部离散状态】：</strong>在某网格点 $(i,j)$，预测速度场为 $u^* = 2.0, v^* = 1.0$。求解压力泊松方程后，探测到该点周围的压力场分布为：<br>
+  右邻居 $p_{i+1,j} = 10.0$，左邻居 $p_{i-1,j} = 2.0$；上邻居与下邻居压力相等。<br>
+  设密度 $\rho = 1.0$，网格步长 $\Delta x = 0.5$，时间步长 $\Delta t = 0.1$。</p>
+  <p><strong>【手动推演任务】：</strong>求经过压力投影修正后，该点最终的水平物理速度 $u_{i,j}^{n+1}$。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准数值解答</summary>
+    <div class="a">
+      1. 计算水平压力梯度：$\frac{\partial p}{\partial x} = \frac{p_{i+1,j} - p_{i-1,j}}{2\Delta x} = \frac{10.0 - 2.0}{2\times 0.5} = 8.0\text{ Pa/m}$；<br>
+      2. 压力阻力修正：$-\frac{\Delta t}{\rho} \frac{\partial p}{\partial x} = -\frac{0.1}{1.0} \times 8.0 = -0.8$；<br>
+      3. 最终投影速度：$u_{i,j}^{n+1} = u^* - 0.8 = 2.0 - 0.8 = 1.2$。<br>
+      <strong>物理直觉验证：</strong>右侧压力显著高于左侧（逆压梯度），流体在向前运动时遭遇高压阻挡，速度从原本预测的 2.0 被硬生生削减为 1.2！这就是压力强行重塑流动轨迹的真实过程。
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>在同位笛卡尔网格（Collocated Grid）上，一位同学在更新速度时发现流场出现严重的“奇偶黑白相间的棋盘格高频压力波”，但速度场似乎毫无反应，程序运行一段时间后突然发散崩溃：</p>
+  <pre><code># 跨点中心差分计算压力梯度
+dp_dx = (p[1:-1, 2:] - p[1:-1, :-2]) / (2 * dx)</code></pre>
+  <p><strong>【排错审问任务】：</strong>揭示同位网格上中心差分跨点的“棋盘格解耦”（Checkerboard Decoupling）致命缺陷，指出为什么工业 CFD 必须采用交错网格（Staggered MAC Grid）或增加内迭代阻尼？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong>跨点差分 $(p_{i+1} - p_{i-1})/(2\Delta x)$ 恰好跳过了中心节点 $i$！如果压力场存在奇数点全为 $+100$、偶数点全为 $-100$ 的剧烈黑白棋盘格寄生振荡，代入差分公式后相减居然全部等于 0！动量方程完全感知不到眼前剧烈的压力振荡，使得压力误差无拘无束地恶性滋生，最终彻底摧毁解的真实性。</p>
+      <p><strong>【工业根治方案】：</strong>工业级 Navier-Stokes 求解器（如 Harlow & Welch 的 MAC 网格）将压力定义在网格中心，将速度 $u$ 定义在垂直交界面，将速度 $v$ 定义在水平交界面（网格交错半个步长），差分直接作用于相邻格点，在拓扑上彻底物理歼灭棋盘格假象。</p>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  不可压缩流体不是不可移动，而是每一滴水都时刻听从全域的瞬间号令！
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>为什么不可压缩水流里的“压力”，本质上只是一个全天候巡逻的交通警察？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>拉格朗日乘子、Navier-Stokes、连续性方程、投影法、散度</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “如果水分子是绝不能被挤扁的坚硬玻璃弹珠，只要任何一个地方有两颗弹珠试图撞进同一个位置，彼此之间就会瞬间爆发出无比巨大的顶撞推力。水流里的压力并不是凭空产生能量的源头，它就像一个严厉无比的交通警察，哪里出现交通拥堵的苗头，他就立刻在原地制造强大的推力把水分子狠狠推开，时刻保证整条马路绝不堵死一个人。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当雷诺数 $Re \to 0$（极低速或极高粘度，如沥青或微米细菌在水中游动）时，惯性非线性项完全可以忽略不计，Navier-Stokes 退化为严格对称且时间可逆的稳态 Stokes 蠕动流（Purcell 扇贝定理）。</li>
+  <li><strong>极限二（趋近无穷大时）：</strong>当雷诺数 $Re \to \infty$ 时，分子粘性耗散层厚度趋于零，边界层发生剧烈分离脱落，流场演化为具有无限尺度级联传递的三维不可压缩湍流（Richardson 能量级联）。</li>
+  <li><strong>极限三（物理声速失效极限）：</strong>自然界没有绝对不可压缩的流体。当流速接近或超过介质声速的 30%（马赫数 $Ma > 0.3$）时，声波携带的压缩波形无法瞬态平滑全域，连续性方程的不可压缩假设彻底破灭，必须回归可压缩气体动力学方程组。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么很多人在写 Cavity Flow 时，把顶壁两个角隅点 $(0, ny-1)$ 和 $(nx-1, ny-1)$ 的水平速度既想设为 1.0 又想设为 0.0，最后引发程序报错？</p>
+  <p><strong>【真实底层】：</strong>这是经典的<strong>奇异角隅点（Singular Corner Paradox）</strong>！顶盖要求滑动速度为 1.0，而侧壁要求固定静止速度为 0.0，两面墙壁在直角顶点产生拓扑冲突，该点的数学剪切应力理论上趋向无穷大！在有限差分实现中，必须做出明确选择（通常将角隅点归属于静止壁面），并认识到这是离散几何边界导致的局部奇点，切莫与算法失稳混为一谈。</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>卷一收官验收：Ghia et al. (1982) 世界标准实验基准同台对齐！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FDM-0010</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fdm/step11_cavity_flow.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/fdm/step11_cavity_flow.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>$Re=100$ 顶盖空腔流稳态流线云图与方腔几何中心线垂直截面水平速度 $U(y)$ 剖面图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证 Chorin 投影法分离解耦动量与连续性方程，准确复现主旋涡位置与角隅次级分离涡</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>全场最大速度散度 $\max|\nabla \cdot \mathbf{u}| < 1.0 \times 10^{-3}$，中心中截面极小值与 Ghia et al. (1982) 基准严格契合</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 卷一圆满收官！范式觉醒：迈向物理信息神经网络（PINN）新纪元！</span>
+  <p><strong>热烈祝贺你！</strong>通过前 10 章的刻苦钻研与纸笔推演，你已经亲手攀登完了经典有限差分计算流体力学（FDM）的全部高峰。从最基础的 NumPy 内存阵列，到一阶迎风、非线性激波、CFL 因果律、拉普拉斯松弛，直至不可压缩 Navier-Stokes 顶盖驱动流的壮丽旋涡！你已经具备了一名专业计算流体力学工程师最坚实的底座功力。</p>
+  <p>但是，请驻足反思经典网格算法的阿喀琉斯之踵：</p>
+  <ul>
+    <li>想要更高的空间分辨率，格点数量就成 $N^d$ 指数级爆炸（<strong>维度灾难</strong>）；</li>
+    <li>现实世界的复杂飞机潜艇几何，需要耗费工程师数周时间手动画网格（<strong>网格生成困境</strong>）；</li>
+    <li>传统的网格无法直接融合稀疏不完整的实验传感器测量数据（<strong>反问题黑盒</strong>）。</li>
+  </ul>
+  <p>下一卷（第 11~15 章），我们将掀起一场颠覆性的<strong>科学机器学习（SciML）认知革命</strong>！我们将彻底砸碎固定空间离散网格的枷锁，拥抱深度学习的连续函数逼近能力——<strong>物理信息神经网络（PINN）震撼登场</strong>！</p>
+  <p><strong>【卷一导师毕业大考】：</strong>学完本章后，请立即在对话框向导师发送：“<em>导师，我已彻底完成卷一全套有限差分算法研读并跑通空腔流基准！请对我进行卷一收官答辩考核，我准备好了！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0009-step9-10-laplace-poisson.html">← 第 09 章 · Steps 9+10 二维 Laplace 与 Poisson</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0011-b1-pinn-concept.html">第 11 章 · B1 物理信息神经网络范式觉醒 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷一：离散世界与有限差分底座</p>
+</footer>
+
+</div>
+</body>
+</html>

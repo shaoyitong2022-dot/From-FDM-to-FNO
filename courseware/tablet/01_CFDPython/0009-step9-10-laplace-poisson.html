@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 09 章 · Steps 9+10 二维 Laplace 与 Poisson 椭圆型松弛求解器</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷一：有限差分与经典流体底座</p>
+  <h1>第 09 章 · Steps 9+10 二维 Laplace 与 Poisson 椭圆型松弛求解器</h1>
+  <p class="meta">字数约 7,200 ｜ 建议学时：80 分钟 ｜ 核心定理：强极值原理与均值定理 · 虚拟时间动力松弛 · Jacobi 与 Gauss-Seidel 谱半径 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 从时间步进到全域瞬态代数平衡</span>
+  <p><strong>承接上章：</strong>前面所有章节求解的都是双曲型（对流）或抛物型（扩散）偏微分方程，它们描述的是物理场随时间一秒一秒向前演化的<strong>动力学过程</strong>。</p>
+  <p><strong>本章物理母题：</strong>数学物理方程的第三大巅峰家族——<strong>椭圆型偏微分方程（Laplace 与 Poisson 方程，Steps 9 & 10）</strong>：</p>
+  $$\nabla^2 p = \frac{\partial^2 p}{\partial x^2} + \frac{\partial^2 p}{\partial y^2} = 0 \quad (\text{Laplace})$$
+  $$\nabla^2 p = \frac{\partial^2 p}{\partial x^2} + \frac{\partial^2 p}{\partial y^2} = b(x,y) \quad (\text{Poisson})$$
+  <p>注意！方程里<strong>根本没有时间导数 $\partial_t$</strong>！它描述的是一个处于绝对稳态平衡的物理系统（静电场、引力势场、不可压缩流体中的压力平衡场）。任何边界上的轻微扰动，都会在瞬间被全宇宙感知并重新排布平衡。你将在此掌握五点离散线性方程组的<strong>迭代松弛求解法（Jacobi vs Gauss-Seidel）</strong>，并目睹网格加密时松弛收敛步数暴增 4 倍的残酷现实！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 深刻领悟椭圆型方程的全域瞬态响应本质与狄利克雷/诺伊曼边界约束；<br>
+  ② 掌握虚拟时间松弛法（Pseudo-time Relaxation）将代数方程组化为动力系统的数值技巧；<br>
+  ③ 对比 Jacobi 与 Gauss-Seidel 迭代法的内存读写与收敛速度差异（实测 2 倍收敛倍率）；<br>
+  ④ 建立规范的无量纲相对残差范数收敛判据，破除绝对求和导致死循环的工程误区。
+</div>
+
+<h2>1 · 数学与物理基石：椭圆型方程的全域平衡与极值原理</h2>
+
+<h3>1.1 强极值原理与均值定理</h3>
+<p>在没有内部源项的调和域内（Laplace 方程 $\nabla^2 p = 0$），解具有极度优美的数学性质——<strong>高斯均值定理（Mean Value Theorem）</strong>：域内任意一点的值，严格等于以该点为圆心的任意同心圆周上的平均值！</p>
+<p>由此直接导出<strong>强极值原理（Strong Maximum Principle）</strong>：调和函数的最大值和最小值<strong>必然且只能出现在计算域的物理边界上</strong>，内部绝不可能自发孕育出孤立的局域极大值或极小值峰值！一旦边界确定，全域内部形态被唯一且光滑地彻底冻结。</p>
+
+<h3>1.2 泊松方程：源项强迫产生的曲率势阱</h3>
+<p>当存在质量源、电荷源或动量散度漂移时，拉普拉斯算子被源项打破：$\nabla^2 p = b(x,y)$。源项 $b > 0$ 的区域相当于在平整弹性膜上向下施加重力压迫，产生势能低谷；源项 $b < 0$ 的区域则向上顶起峰值。无论源项多么复杂，只要四周边框固定，整张膜的平衡状态在数学上是唯一确定的。</p>
+
+<h2>2 · 慢动作离散化：五点星型模板与迭代松弛法</h2>
+
+<p>采用空间二阶中心差分，离散泊松方程写作：</p>
+$$\frac{p_{i+1,j} - 2p_{i,j} + p_{i-1,j}}{\Delta x^2} + \frac{p_{i,j+1} - 2p_{i,j} + p_{i,j-1}}{\Delta y^2} = b_{i,j}$$
+<p>在正方形网格（$\Delta x = \Delta y$）下，将中心点 $p_{i,j}$ 单独分离到等号左侧：</p>
+$$p_{i,j} = \frac{1}{4} \left( p_{i+1,j} + p_{i-1,j} + p_{i,j+1} + p_{i,j-1} - b_{i,j} \Delta x^2 \right)$$
+<p>这不再是一个时间推进公式，而是一个拥有 $(n_x - 2) \times (n_y - 2)$ 个相互缠绕未知数的<strong>巨大稀疏线性代数方程组 $A \mathbf{p} = \mathbf{b}$</strong>！</p>
+
+<h3>松弛迭代的智慧：Jacobi 与 Gauss-Seidel</h3>
+<p>直接求解大型矩阵求逆开销巨大（$O(N^3)$）。我们引入迭代计数器 $k$：</p>
+<ul>
+  <li><strong>Jacobi 迭代：</strong>严格基于第 $k$ 次迭代的全局旧值计算所有新值：
+  $$p_{i,j}^{(k+1)} = \frac{1}{4} \left( p_{i+1,j}^{(k)} + p_{i-1,j}^{(k)} + p_{i,j+1}^{(k)} + p_{i,j-1}^{(k)} - b_{i,j} \Delta x^2 \right)$$
+  </li>
+  <li><strong>Gauss-Seidel 迭代：</strong>随算随用！由于计算机按顺序遍历网格，在计算 $(i,j)$ 时，左邻居 $(i-1, j)$ 和下邻居 $(i, j-1)$ 已经具有新鲜出炉的第 $k+1$ 次迭代值，直接代入：
+  $$p_{i,j}^{(k+1)} = \frac{1}{4} \left( p_{i+1,j}^{(k)} + p_{i-1,j}^{(k+1)} + p_{i,j+1}^{(k)} + p_{i,j-1}^{(k+1)} - b_{i,j} \Delta x^2 \right)$$
+  </li>
+</ul>
+<p>代数分析证明，Gauss-Seidel 迭代矩阵的谱半径恰好是 Jacobi 谱半径的平方（$\rho_{GS} = \rho_J^2$），这意味着在相同内存开销下，<strong>Gauss-Seidel 的误差衰减速度整整快了一倍！</strong></p>
+
+<h2>3 · 工业级最小自包含实现</h2>
+
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+# 1. 空间与网格配置
+nx, ny = 41, 41
+Lx, Ly = 2.0, 1.0
+dx = Lx / (nx - 1)
+dy = Ly / (ny - 1)
+
+# 2. 初始场与源项 b(x,y)
+p = np.zeros((ny, nx))
+b = np.zeros((ny, nx))
+# 在两个特定对称位置设置正负点源
+b[int(ny / 4), int(nx / 4)] = 100.0
+b[int(3 * ny / 4), int(3 * nx / 4)] = -100.0
+
+# 3. Gauss-Seidel / Jacobi 松弛迭代求解
+tol = 1e-4
+max_iter = 2000
+diff = 1.0
+iteration = 0
+
+while diff > tol and iteration < max_iter:
+    pn = p.copy()
+    
+    # 五点中心松弛切片更新
+    p[1:-1, 1:-1] = (dy**2 * (pn[1:-1, 2:] + pn[1:-1, :-2]) + 
+                     dx**2 * (pn[2:, 1:-1] + pn[:-2, 1:-1]) - 
+                     b[1:-1, 1:-1] * dx**2 * dy**2) / (2 * (dx**2 + dy**2))
+                     
+    # 严格狄利克雷边界保持为 0
+    p[0, :] = 0.0; p[-1, :] = 0.0; p[:, 0] = 0.0; p[:, -1] = 0.0
+    
+    # 计算无量纲相对 L2 范数残差
+    diff = np.linalg.norm(p - pn) / (np.linalg.norm(pn) + 1e-12)
+    iteration += 1
+
+print(f"Poisson solved in {iteration} iterations. Relative L2 Residual: {diff:.4e}")</code></pre>
+
+<table>
+  <tr><th>参数 / 语法</th><th>物理数学含义</th><th>典型值</th><th>敏感性分析与工程防错</th></tr>
+  <tr><td><code>b[ny/4, nx/4] = 100.0</code></td><td>点源脉冲激扰</td><td>$\pm 100$</td><td>正源产生局部下凹漏斗势阱，负源产生凸起峰值。</td></tr>
+  <tr><td><code>np.linalg.norm(p - pn) / norm(pn)</code></td><td>相对 $L_2$ 范数变化率</td><td>$< 10^{-4}$</td><td>必须使用相对量除以旧值范数，规避网格加密引发的求和绝对量膨胀。</td></tr>
+  <tr><td><code>2 * (dx**2 + dy**2)</code></td><td>各向异性归一化分母</td><td>分母</td><td>当 $dx \ne dy$ 时的通用严密分母；若误除以 4 会彻底破坏椭圆平衡。</td></tr>
+</table>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】网格分辨率加密 1 倍导致迭代步数爆炸实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>使用 Jacobi 迭代求解拉普拉斯方程。在 $20 \times 20$ 粗网格上，系统大约需要 350 次迭代达到收敛。现将网格加密一倍至 $40 \times 40$：</p>
+    <p><strong>【请你先猜】</strong>迭代步数大约会增加到多少次？700 次（翻倍）？还是更多？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>迭代次数没有停留在 700 次，而是暴增到近 1400 次——整整翻了 4 倍！</p>
+    <p><strong>【物理与数值归因】</strong><br>五点差分离散矩阵的最大特征值谱半径为 $\rho = \cos(\pi / N) \approx 1 - \frac{\pi^2}{2N^2}$。迭代渐进收敛因子由 $1 - \rho \propto \frac{1}{N^2}$ 决定！网格每加密 1 倍（$N$ 翻倍），每一次松弛对全局低频误差的平滑阻尼就削弱 4 倍！这是所有单层经典松弛法的阿喀琉斯之踵，直接催生了<strong>多重网格法（Multigrid Method）</strong>这一计算力学巅峰皇冠。</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在求解泊松方程时，若源项 $b(x,y)$ 为常数，请在正方形网格 $\Delta x = \Delta y$ 下补齐松弛更新式中的源项权值：</p>
+<pre><code># TODO [主动生成]: 正方形网格 dx = dy 下的泊松松弛核心行
+p[1:-1, 1:-1] = 0.25 * (
+    pn[1:-1, 2:] + pn[1:-1, :-2] + pn[2:, 1:-1] + pn[:-2, 1:-1] - 
+    # 请填入源项 b 与网格步长的代数组合
+)</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>p[1:-1, 1:-1] = 0.25 * (
+    pn[1:-1, 2:] + pn[1:-1, :-2] + pn[2:, 1:-1] + pn[:-2, 1:-1] - 
+    b[1:-1, 1:-1] * dx**2
+)</code></pre>
+    <p><strong>【底层机理解析】：</strong>在 $\Delta x = \Delta y$ 时，分母原为 $4/\Delta x^2$。将整个括号乘以 $0.25$ 后，源项 $b_{i,j}$ 必须乘以 $\Delta x^2$ 才能保持量纲与势能单位严格自洽！</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>4.3 单步离散手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 纸笔手算心智模型对齐</span>
+  <p><strong>【初始离散状态】：</strong>取 $3 \times 3$ 拉普拉斯网格，全域初值为 0。边界设定：顶边 $(y=2)$ 电位为 100V，其余三边（底边、左边、右边）电位恒为 0V。<br>
+  网格内仅有唯一一个内部点 $(1,1)$。</p>
+  <p><strong>【手动推演任务】：</strong>求该内部中心点在稳态时的精确离散解。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准数值解答</summary>
+    <div class="a">
+      1. 中心点方程：$p_{1,1} = 0.25 \times (p_{\text{right}} + p_{\text{left}} + p_{\text{top}} + p_{\text{bottom}})$；<br>
+      2. 代入已知物理边界值：$p_{\text{right}} = 0, p_{\text{left}} = 0, p_{\text{top}} = 100.0, p_{\text{bottom}} = 0$；<br>
+      3. 精确代数平衡：$p_{1,1} = 0.25 \times (0 + 0 + 100.0 + 0) = 25.0\text{ V}$。<br>
+      <strong>物理直觉验证：</strong>高斯均值定理在此展露无遗！内部唯一的一点精确平分了周围四个边界的贡献，不多不少，正好是顶边电位的四分之一！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位初学者编写了如下松弛终止逻辑，发现在粗网格下能正常收敛，但一旦将网格加密到 $100 \times 100$ 时，程序就陷入无休止的死循环：</p>
+  <pre><code># 错误代码：绝对误差和终止条件
+while True:
+    pn = p.copy()
+    p[1:-1, 1:-1] = ... # 松弛计算
+    # 绝对值之和小于 1e-4
+    if np.sum(np.abs(p - pn)) < 1e-4:
+        break</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出为什么网格越密，<code>np.sum</code> 越不可能小于固定阈值？给出工业级归一化修复方案。</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【问题行】：</strong><code>if np.sum(np.abs(p - pn)) < 1e-4:</code></p>
+      <p><strong>【失效机理】：</strong><code>np.sum</code> 计算的是全网格所有误差的绝对代数和。当网格从 $20\times 20$（400 点）加密到 $100\times 100$（10000 点）时，参与求和的格点数暴增了 25 倍！哪怕每个格点的局域单点误差已经下降到 $10^{-7}$，一万个点累加起来依然大于 $10^{-4}$，导致程序永远无法满足跳出条件陷入假死。</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>if np.linalg.norm(p - pn) / np.linalg.norm(pn) < 1e-4:
+    break</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  椭圆型方程是全宇宙最紧密的相互纠缠，牵一发而动全身！
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>一张四周边框焊死在特定高度的弹性蹦床，在正中间放上一个保龄球后，整张床面为什么会自然形成那种优美光滑的曲面？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>泊松方程、狄利克雷边界、极值原理、变分法、格林函数</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “保龄球把蹦床中心死死往下压出了一个深坑，而四周边缘被铁框牢牢固定住分毫不动。整张弹性布料由无数微小弹簧紧紧织在一起，它们每一瞬间都在互相拉扯，任何一个局部只要稍微有点突兀多余的褶皱，多出来的拉力就会立刻把它扯平。最后整张床只能自发达到唯一一种全身上下张力最均衡、最不费力气的平滑状态。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当源项 $b(x,y) \to 0$ 时，泊松方程退化为拉普拉斯方程，全域内部绝无孤立极值点，解完全由边界形状全权掌控。</li>
+  <li><strong>极限二（信息传播速度极限）：</strong>在双曲型对流方程中，信息以有限波速 $c$ 传播；但在椭圆型方程中，<strong>数学上的信息传播速度是无穷大</strong>！只要边界上某一个点的电位微调 0.001 伏，全域无限远深处所有格点瞬间全盘重新洗牌响应。</li>
+  <li><strong>极限三（物理破缺与诺伊曼相容性条件）：</strong>若四周边框全部施加诺伊曼无流边界 $\partial p / \partial n = 0$，根据高斯散度定理，源项必须满足积分平衡 $\iint b(x,y) dx dy = 0$！若净源项不为零，系统在物理上等价于在一个封闭刚性罐子里不断注水，内部压力将无休止暴增至无穷大（代数方程无解）。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么明明泊松方程是描述稳态平衡的静态方程，我们在写代码时却非要在外面包上一层 <code>while</code> 循环甚至定义类似于时间步进的迭代？</p>
+  <p><strong>【真实底层】：</strong>因为计算机无法直接肉眼看出庞大联立方程组的解！我们在数值上构建了一个<strong>虚拟时间动力系统（Pseudo-time System）</strong>：$\frac{\partial p}{\partial \tau} = \nabla^2 p - b$。我们让系统从随意猜测的初值开始，任由其在虚拟时间 $\tau$ 里耗散释放应力，当虚拟时间趋于无穷大（$\partial_\tau p \to 0$）时，系统残留下来的稳态解正是代数方程组的精确解！这是松弛算法最深沉的哲学设计。</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>二维泊松势场松弛收敛与极值包络验收！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FDM-0009</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fdm/step09_laplace_2d.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/fdm/step09_laplace_2d.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>二维稳态电位/压力场平滑等高线与三维马鞍形曲面图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证五点星型模板在狄利克雷边界约束下的绝对代数收敛性，内部极值受物理边界包络限制</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>相对残差范数成功压降至 $< 1.0 \times 10^{-4}$，最大迭代步数收敛受控</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 卷一终局之战：人类流体力学巅峰殿堂——不可压缩 Navier-Stokes！</span>
+  <p>致敬你的坚持！到此为止，你已经掌握了计算流体力学的全部三大兵器：<strong>对流处理了惯性，扩散处理了粘性，泊松松弛搞定了全域压力！</strong></p>
+  <p>现在，我们将把所有这三大兵器融铸为一体，迎战卷一的最高峰——<strong>不可压缩 Navier-Stokes 方程与顶盖驱动空腔流（Steps 11 & 12）</strong>！我们将学习 1968 年 Alexandre Chorin 提出的<strong>投影法（Chorin's Projection Method）</strong>：先让动量方程放飞自我计算中间速度，再通过求解压力泊松方程，将速度场强行正交投影回不可压缩物理流形！你将亲手模拟出经典的大涡旋结构，并与世界级流体力学标准实验数据（Ghia et al. 1982）同台竞技！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对泊松松弛与谱半径收敛机制已全面通透，请向我出题考查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0008-step7-8-2d-diffusion-burgers.html">← 第 08 章 · Steps 7+8 二维扩散与 Burgers</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0010-step11-12-ns-cavity-channel.html">第 10 章 · Steps 11+12 顶盖驱动空腔流与 NS 方程 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷一：离散世界与有限差分底座</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 06 章 · Step 4 一维粘性 Burgers 方程与 Cole-Hopf 严密解析基准</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷一：有限差分与经典流体底座</p>
+  <h1>第 06 章 · Step 4 一维粘性 Burgers 方程与 Cole-Hopf 严密解析基准</h1>
+  <p class="meta">字数约 6,500 ｜ 建议学时：75 分钟 ｜ 核心定理：Cole-Hopf 线性化变换 · Reynolds 数角力 · 周期拓扑闭合 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 对流与扩散的终极角力</span>
+  <p><strong>承接上章：</strong>在第 03 章中，我们见识了非线性对流项 $u \partial_x u$ 自发将波形推向陡峭激波的狂暴本性；在第 05 章中，我们推导了二阶扩散项 $
+u \partial_{xx} u$ 将一切锐利边界抹平为温和高斯的耗散本领。</p>
+  <p><strong>本章物理母题：</strong>流体力学中最著名的非线性模型方程——<strong>一维粘性 Burgers 方程（Step 4）</strong>：</p>
+  $$\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} = \nu \frac{\partial^2 u}{\partial x^2}$$
+  <p>这是真实不可压缩 Navier-Stokes 动量方程在一维空间的完美微缩投影！对流项拼命制造陡坡与激波，扩散项以二阶拉普拉斯算子拼命磨平尖锐。流体呈现平滑波形还是陡峭激波，完全取决于两者的力量比值——<strong>雷诺数（Reynolds Number）的雏形</strong>由此诞生！</p>
+  <p>更奇迹的是，本章将引入数学史上著名的 <strong>Cole-Hopf 变换</strong>，将这个极其棘手的非线性偏微分方程严格线性化为经典热传导方程，为我们提供计算流体力学中罕见且宝贵的<strong>无误差解析解黄金标尺（Analytical Benchmark）</strong>！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 掌握对流-扩散混合算子的离散拼接与向前时间-迎风-中心空间（FTBS-CS）格式；<br>
+  ② 深入理解周期间隔拓扑边界条件（Periodic Boundary Conditions）的环形数据流；<br>
+  ③ 掌握 SymPy 符号微积分求导并利用 <code>lambdify</code> 烘焙为高性能数值初值生成的科研工业流水线；<br>
+  ④ 产出人生第一个包含非线性与耗散对决的数值解，与 Cole-Hopf 严密解析解展开像素级精度校验！
+</div>
+
+<h2>1 · 数学物理基石：非线性陡化、黏性耗散与 Cole-Hopf 变换</h2>
+
+<h3>1.1 对立统一的物理博弈：雷诺数的几何直觉</h3>
+<p>在 Burgers 方程中，非线性项 $u \partial_x u$ 具有“大速度跑得快、小速度跑得慢”的自加速特性，波峰会不断追赶波谷，导致波前梯度 $\partial_x u 	o -\infty$。如果没有扩散，波形将在有限时间内发生多值重叠（Breaking），形成数学上的间断激波。</p>
+<p>而右侧的粘性项 $
+u \partial_{xx} u$ 则由微观分子碰撞产生，当空间二阶导数极度剧烈时，粘性耗散通量成倍暴增，强行阻止波形坍缩为无穷薄的间断，将其稳定在具有特定物理厚度 $\delta \sim 
+u / \Delta u$ 的<strong>粘性激波层（Viscous Shock Profile）</strong>内部。</p>
+<p>两者强度的无量纲比值即为局部雷诺数：</p>
+$$\mathrm{Re} = \frac{\text{对流惯性项}}{\text{粘性扩散项}} \sim \frac{U L}{\nu}$$
+<p>当 $\nu \to 0$ 时，$\mathrm{Re} \to \infty$，解趋近于无粘间断激波；当 $\nu$ 较大时，扩散彻底驯服对流，系统演化为光滑的衰减波包。</p>
+
+<h3>1.2 Cole-Hopf 严格线性化变换</h3>
+<p>1950 年代，Julian Cole 与 Eberhard Hopf 独立发现了一个奇迹般的非线性代换。令：</p>
+$$u(x, t) = -2\nu \frac{1}{\phi(x, t)} \frac{\partial \phi(x, t)}{\partial x} = -2\nu \frac{\partial \ln \phi}{\partial x}$$
+<p>将此式代入一维粘性 Burgers 方程，经过求导链式法则展开，极其繁杂的非线性交叉项相互完全抵消，原方程奇迹般地退化为关于辅助变量 $\phi$ 的<strong>标准一维线性热传导方程</strong>：</p>
+$$\frac{\partial \phi}{\partial t} = \nu \frac{\partial^2 \phi}{\partial x^2}$$
+<p>利用热传导方程已知的泊松积分核或周期级数解，我们便可以通过纯解析方式获得 Burgers 方程在任意时刻 $t$ 的精确解析解 $u(x, t)$！本章采用的经典初值形式为：</p>
+$$\phi(x, 0) = \exp\left(-\frac{x^2}{4\nu}\right) + \exp\left(-\frac{(x - 2\pi)^2}{4\nu}\right)$$
+$$u(x, 0) = -\frac{2\nu}{\phi} \frac{\partial \phi}{\partial x} + 4$$
+
+<h2>2 · 慢动作离散化：FTBS-CS 格式与周期环拓扑</h2>
+
+<p>我们对时间导数采用一阶前向差分，对非线性对流项采用一阶向后迎风差分（由于平均波速 $u > 0$），对二阶扩散项采用二阶中心差分：</p>
+$$\frac{u_i^{n+1} - u_i^n}{\Delta t} + u_i^n \frac{u_i^n - u_{i-1}^n}{\Delta x} = \nu \frac{u_{i+1}^n - 2u_i^n + u_{i-1}^n}{\Delta x^2}$$
+<p>移项整理出显示推进显式更新法则：</p>
+$$u_i^{n+1} = u_i^n - u_i^n \frac{\Delta t}{\Delta x} (u_i^n - u_{i-1}^n) + \nu \frac{\Delta t}{\Delta x^2} (u_{i+1}^n - 2u_i^n + u_{i-1}^n)$$
+
+<h3>周期性边界条件（Periodic Boundary Conditions）</h3>
+<p>本章计算域设为环形管道 $[0, 2\pi]$。从右侧 $x = 2\pi$ 流出的流体必须在同一时刻从左侧 $x = 0$ 重新流入。这意味着空间拓扑是一个首尾相接的闭合圆环：</p>
+$$u_0^n \equiv u_{N-1}^n, \quad u_{-1}^n \equiv u_{N-2}^n, \quad u_N^n \equiv u_1^n$$
+<p>在代码实现中，左端点 $i=0$ 的左邻居是倒数第二个物理格点 <code>u[-2]</code>，而计算完成后必须强制使边界值同步闭合：<code>u[-1] = u[0]</code>。</p>
+
+<h2>3 · 工业级最小自包含实现</h2>
+
+<pre><code>import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+
+# 1. SymPy 符号代数解析推导初值场
+x_sym, nu_sym, t_sym = sp.symbols('x nu t')
+phi_sym = (sp.exp(-(x_sym - 4*t_sym)**2 / (4*nu_sym*(t_sym + 1))) +
+           sp.exp(-(x_sym - 4*t_sym - 2*sp.pi)**2 / (4*nu_sym*(t_sym + 1))))
+phiprime_sym = phi_sym.diff(x_sym)
+u_exact_sym = -2 * nu_sym * (phiprime_sym / phi_sym) + 4
+# 烘焙为可调用的高性能向量化数值函数
+u_exact_func = sp.lambdify((t_sym, x_sym, nu_sym), u_exact_sym, 'numpy')
+
+# 2. 离散网格与物理参数设置
+nx = 101
+dx = 2 * np.pi / (nx - 1)
+nu = 0.07
+nt = 100
+dt = dx * nu  # 确保扩散与对流稳定性
+
+x = np.linspace(0, 2 * np.pi, nx)
+u = u_exact_func(0, x, nu)  # t=0 时刻初始场
+
+# 3. 显式时间步进求解器
+for n in range(nt):
+    un = u.copy()
+    # 内部点向量化更新 (1 到 nx-2)
+    u[1:-1] = (un[1:-1] - 
+               un[1:-1] * (dt / dx) * (un[1:-1] - un[:-2]) + 
+               nu * (dt / dx**2) * (un[2:] - 2 * un[1:-1] + un[:-2]))
+    
+    # 周期边界更新 (点 0 的左邻居是 un[-2])
+    u[0] = (un[0] - 
+            un[0] * (dt / dx) * (un[0] - un[-2]) + 
+            nu * (dt / dx**2) * (un[1] - 2 * un[0] + un[-2]))
+    u[-1] = u[0]  # 闭合圆环端点
+
+# 4. 解析基准比对
+u_analytical = u_exact_func(nt * dt, x, nu)
+l2_err = np.linalg.norm(u - u_analytical) / np.linalg.norm(u_analytical)
+print(f"Burgers FTBS-CS Relative L2 Error: {l2_err:.4e}")</code></pre>
+
+<table>
+  <tr><th>参数 / 语法</th><th>物理数学含义</th><th>典型值</th><th>敏感性分析与工程防错</th></tr>
+  <tr><td><code>nu = 0.07</code></td><td>运动粘性系数 $\nu$</td><td>0.07</td><td>决定激波过渡层厚度；$\nu$ 越小激波越陡，数值振荡风险越剧烈。</td></tr>
+  <tr><td><code>dt = dx * nu</code></td><td>自适应安全时间步长</td><td>$\approx 0.0044$</td><td>同时满足对流 CFL $\le 1$ 与扩散稳定性 $r \le 0.5$ 双重红线。</td></tr>
+  <tr><td><code>u[-2]</code> 作为左邻</td><td>周期间隔负向环绕索引</td><td>下标 <code>nx-2</code></td><td>充分利用 Python 负索引特性；若误写为 <code>u[-1]</code> 则导致零梯度伪边界。</td></tr>
+  <tr><td><code>sp.lambdify</code></td><td>符号解析式转数值核</td><td>'numpy' 后端</td><td>在微秒级完成全网格高效求值，规避慢速 Python 解释循环。</td></tr>
+</table>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<div class="box">
+  <span class="box-title">◆ 认知防沉迷守则（Dr. Cat Hicks 学习科学框架）</span>
+  动量非线性项具有单向陡化特性，不要仅凭直觉判断误差演化。先写下你的推导再验证！
+</div>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】粘性系数大幅削减时的波前激波形态</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>将系统粘性系数从 $\nu = 0.07$ 骤降至 $\nu = 0.005$（雷诺数暴增 14 倍），保持网格 $n_x = 101$ 不变，运行相同时间：</p>
+    <p><strong>【请你先猜】</strong>解曲线会呈现更完美陡峭的直角阶跃激波，还是会直接失稳崩溃？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>在波峰跌落波谷的迎风陡峭后方，爆发了极其剧烈的高频锯齿状锯齿震荡（Gibbs-like Oscillation），数值解完全报废！</p>
+    <p><strong>【物理与数值归因】</strong><br>物理激波层的物理真实厚度由粘性决定：$\delta \sim \nu$。当 $\nu = 0.005$ 时，激波层厚度远小于离散网格间距 $\Delta x \approx 0.0628$。当网格尺度无法在物理激波层内部塞进至少 3~5 个格点时，中心差分扩散项完全无法提供足够的网格雷诺数耗散，导致网格频散发散（Cell Reynolds Number $Re_c = u\Delta x / \nu > 2$）。工业级高 Re 求解必须引入 TVD/WENO 限制器或激波捕捉格式。</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在闭合圆环周期边界条件下，最后一个存储节点 $x_{N-1}$ 是起点 $x_0$ 的重合镜像。请补齐周期边界处右邻居的切片索引表达：</p>
+<pre><code># TODO [主动生成]: 针对周期边界条件，0 号格点的左邻居是倒数第二个节点，1 号格点是右邻居
+# 请补齐针对周期闭合的差分行：
+u_next_0 = (un[0] - un[0] * (dt/dx) * (un[0] - un[-2]) + 
+            # 请在此处补齐粘性扩散的二阶差分项（包含右邻居 un[1] 与左邻居 un[-2]）
+           )</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>u_next_0 = (un[0] - un[0] * (dt/dx) * (un[0] - un[-2]) + 
+            nu * (dt/dx**2) * (un[1] - 2 * un[0] + un[-2]))</code></pre>
+    <p><strong>【底层机理解析】：</strong>在圆环拓扑中，点 0 的左侧物理近邻严格对应网格中的 $x_{N-2}$（即 <code>un[-2]</code>），右侧物理近邻为 $x_1$（即 <code>un[1]</code>）。拉普拉斯模板依然保持 $un[\text{right}] - 2un[\text{center}] + un[\text{left}]$ 的守恒对称性。</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>4.3 单步离散手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 纸笔手算心智模型对齐</span>
+  <p><strong>【初始离散状态】：</strong>取周期格点数 $N=4$，当前步场值为 <code>u = np.array([2.0, 3.0, 1.0, 2.0])</code>（注意 <code>u[0]=u[3]=2.0</code>）。设定步长 $\Delta x = 1.0, \Delta t = 0.1, \nu = 0.5$。</p>
+  <p><strong>【手动推演任务】：</strong>求 $i=1$ 节点在下一时刻的离散预测值 $u_1^{n+1}$。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准数值解答</summary>
+    <div class="a">
+      1. 对流项贡献：$-u_1^n \frac{\Delta t}{\Delta x}(u_1^n - u_0^n) = -3.0 \times \frac{0.1}{1.0} \times (3.0 - 2.0) = -0.30$；<br>
+      2. 扩散项贡献：$\nu \frac{\Delta t}{\Delta x^2}(u_2^n - 2u_1^n + u_0^n) = 0.5 \times \frac{0.1}{1.0^2} \times (1.0 - 2\times 3.0 + 2.0) = 0.05 \times (-3.0) = -0.15$；<br>
+      3. 合并更新：$u_1^{n+1} = 3.0 - 0.30 - 0.15 = 2.55$。<br>
+      <strong>物理直觉验证：</strong>节点 1 处流速最大（波峰），对流将其动量输送向下游，同时扩散将其凸起能量拉平，两者合力使其速度从 3.0 迅速回落至 2.55！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位研究员在利用 SymPy 构造解析解时写下了如下代码，后续所有的解析比对全部抛出 <code>AttributeError</code> 或算出的误差为荒谬的巨大常数：</p>
+  <pre><code>t = sp.symbols('t')
+x = sp.symbols('x')
+phi = sp.exp(-x**2 / (4*nu*(t + 1)))
+u_exact = -2 * nu * phi.diff(x) / phi
+
+t = 0  # 设置初始时刻为 0
+for n in range(nt):
+    # 试图重新求当前解析解
+    analytical_now = [u_exact.evalf(subs={t: n*dt, x: xi}) for xi in x_grid]</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出变量覆盖导致的隐蔽灾难，并说明为什么 <code>subs={t: ...}</code> 会彻底失效？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【问题行】：</strong><code>t = 0</code> 变量名被整型数字覆盖！</p>
+      <p><strong>【失效机理】：</strong>在执行 <code>t = 0</code> 之前，<code>t</code> 是 SymPy 的代数符号对象 <code>Symbol('t')</code>；执行后，<code>t</code> 变成了 Python 原生整数 0。在字典 <code>subs={t: n*dt}</code> 中，键变成了 <code>0</code> 而不是符号对象 <code>Symbol('t')</code>！SymPy 在表达式 <code>u_exact</code> 中找不到名为 <code>0</code> 的未知符号，因此完全不执行任何代换，永远返回包含未定符号的解析式或报错崩溃！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>t_sym = sp.symbols('t')  # 符号必须与数值变量严格命名隔离
+t_val = 0.0</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  物理世界的真实激波绝非数学上的“不连续性”，用微观碰撞直击连续介质假定的边界！
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>为什么汽车在高速公路上突然减速会引发长达几公里的拥堵长龙（塞车激波），但慢慢又会自行消散？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>Burgers 方程、对流项、粘性耗散、特征线交叉、非线性</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “开得快的后车遇到前车踩刹车时，由于惯性会迅速扎堆紧逼，让车与车之间的空隙瞬间缩减为零，形成一道谁也冲不过去的致密堵车墙。但后面的司机会根据车距本能地提前松油门、拉开安全间距，这种由于本能反应导致的自我缓冲，就像有弹性的橡皮筋一样，慢慢把极度紧绷的密集车流重新拉稀疏，最后整条长龙就自然平缓化解了。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当粘性 $\nu \to 0$ 时，Burgers 方程退化为无粘非线性守恒律 $\partial_t u + u\partial_x u = 0$，特征线发生几何相交，传统微积分强解不复存在，必须引入弱解（Weak Solution）与 Rankine-Hugoniot 激波跳跃条件。</li>
+  <li><strong>极限二（趋近无穷大时）：</strong>当粘性 $\nu \to \infty$ 时，对流惯性项微不足道，系统退化为纯线性扩散传热，初始无论多么剧烈的波形都会在瞬息之间被无差别熨平为一条水平线。</li>
+  <li><strong>极限三（物理尺度崩溃）：</strong>现实气体的激波内部厚度通常只有几个微米（约几个分子平均自由程）。在激波层内部，流体已经处于强非平衡态，Navier-Stokes 与 Burgers 的牛顿剪切应力正比于应变率的线性假设实际上已经濒临失效。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么很多人在写一维周期性边界条件时，写了 <code>u[0] = u[-1]</code> 却发现算着算着质量就莫名其妙地衰减或者失守？</p>
+  <p><strong>【真实底层】：</strong>因为空间格点剖分 $[0, 2\pi]$ 时，端点 $0$ 与 $2\pi$ 物理上是同一个点！如果数组长度为 $N$，则独立物理自由度只有 $N-1$ 个。在更新完成后，正确的边界强制是 <code>u[-1] = u[0]</code>（或者 <code>u[0] = u[-1]</code> 同步）。如果把 <code>u[-1]</code> 当成了独立格点去参与差分计算，就相当于凭空在圆环上硬塞进了一个宽度为 $\Delta x$ 的虚拟泄漏缝隙！</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>一维非线性混合动力学终极验收：基准解对比误差必须处于严格受控区间！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FDM-0006</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fdm/step04_burgers.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/fdm/step04_burgers.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>一维粘性 Burgers 方程数值解与 Cole-Hopf 严密解析解双线重合对比图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证非线性陡化与粘性耗散在有限雷诺数下的稳态动量平衡，周期圆环积分总质量守恒</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>相对 $L_2$ 误差范数 $\le 2.5 \times 10^{-2}$，总动能衰减率单调受控</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情大跃迁：告别一维，跃入二维宏伟流场！</span>
+  <p>恭喜你！到这里，你已经彻底征服了一维世界的四大基石方程：线性对流、非线性对流、纯扩散、以及将两者融会贯通的粘性 Burgers 方程。你手中已经拥有了有限差分最锋利的刀剑。</p>
+  <p>但是，真实宇宙中的大江大河、飞行器绕流、天气漩涡从来都不是一维单行道！在二维空间中，速度不再是一个孤立标量，而是分裂为横向 $u(x,y)$ 与纵向 $v(x,y)$ 两个相互纠缠的矢量分量；信息的传播也不再只看左右，而是必须在二维四分之一象限中进行全方位的迎风因果判别！多维 CFL 稳定性判据也将迎来残酷的双重紧缩。</p>
+  <p>下一章我们将跨入 <strong>Step 5 & 6：二维线性与非线性对流</strong>，探索真正流体力学的多维壮丽图景！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我已完成一维 Burgers 方程的 Cole-Hopf 求解，请对我进行本章的口头概念抽查并出题考查周期拓扑！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0005-step3-diffusion.html">← 第 05 章 · Step 3 一维扩散</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0007-step5-6-2d-convection.html">第 07 章 · Steps 5+6 二维对流与多维 CFL →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷一：离散世界与有限差分底座</p>
+</footer>
+
+</div>
+</body>
+</html>

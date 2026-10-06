@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 19 章 · 时空 Burgers 方程与时空激波 PINN · 时空统一几何连续建模</title>
+<link rel="stylesheet" href="../assets/course.css">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷三：工业级开源计算框架 DeepXDE 深度实战</p>
+  <h1>第 19 章 · 时空 Burgers 方程与时空激波 PINN · 时空统一几何连续建模</h1>
+  <p class="meta">字数约 7,600 ｜ 建议学时：85 分钟 ｜ 核心架构：GeometryXTime 时空流形 · 激波梯度饥饿机制 · L-BFGS 强力二阶绝杀 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 时间与空间的连续大一统</span>
+  <p><strong>承接上章：</strong>第 18 章我们完成了常微分系统的工业迁移。现在，我们将把时空作为一个完整的整体，迎战流体力学中最具破坏力的非线性现象——<strong>激波（Shock Wave）</strong>！</p>
+  <p><strong>本章前沿母题：</strong><strong>全时空统一连续建模与非线性粘性 Burgers 激波捕捉（Step C-0004）</strong>：</p>
+  $$\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} = \nu \frac{\partial^2 u}{\partial x^2}, \quad x \in [-1, 1], \ t \in [0, 0.99]$$
+  <p>在卷一的有限差分中，我们必须小心翼翼地遵循 CFL 条件，一秒一秒向前推进时间步，一旦步长稍大激波就会爆炸。但在 DeepXDE 中，我们使用 <code>GeometryXTime</code> 将时间 $t$ 彻底降维解构成一个普通的连续几何维度！时空被化为一个二维连续圆柱体，由神经网络在无网格状态下<strong>一次性全局求解整场时空激波演化全景</strong>！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 掌握 <code>dde.geometry.GeometryXTime</code> 时空连续统一建模的几何架构；<br>
+  ② 掌握偏微分方程在时空复合输入 $(x, t)$ 下的偏导数提取 API 语法；<br>
+  ③ 揭示非线性激波在极薄过渡层处引发的“梯度饥饿（Gradient Starvation）”机理；<br>
+  ④ 产出全时空连续激波形成与平移的三维时空演化响应曲面。
+</div>
+
+<h2>1 · 数学物理基石：时空流形与全域连续求解</h2>
+
+<h3>1.1 为什么将时间视为第四个空间维度？</h3>
+<p>在传统时间步进算法（如 Runge-Kutta 或有限差分显式推进）中，时间具有严格的单向因果链。如果我们在第 10 秒放置了一个传感器，传统算法必须先从第 0 秒一步不落地算到第 10 秒才能利用这个数据；如果第 10 秒的数据与初值有冲突，传统算法无法逆向修正初值。</p>
+<p>而在全时空 PINN 中，时空坐标被统一表示为流形上的点：</p>
+$$\mathbf{X} = (x, t) \in \Omega \times [0, T]$$
+<p>时间 $t$ 没有任何特权，它只是输入张量的第二列！神经网络一次前向传播，同时覆盖过去、现在与未来的所有时空点。不仅支持全时空超大规模并行评估，更允许未来的传感器数据在计算图中顺畅反向传播，逆向纠偏初始状态！</p>
+
+<h3>1.2 激波附近的梯度饥饿（Gradient Starvation）</h3>
+<p>当粘性系数极小（如 $\nu = 0.01 / \pi$）时，初始平滑的正弦波 $u(x, 0) = -\sin(\pi x)$ 会在 $t \approx 0.5$ 附近陡化坍缩，形成极其尖锐、近乎垂直的跳跃前沿（激波）。</p>
+<p>在全时空域内，激波过渡层占据的体积不到总时空体积的 1%。如果采用常规的均匀随机采样，99% 的配点都落在了平缓区。这些平缓区的残差很小，向优化器贡献了大量平庸的梯度；而激波剧烈跳跃处的极端残差被稀释淹没，导致网络在激波尖锐处优化停滞，波前被错误地磨平钝化。这催生了工业级 SciML 的核心前沿——<strong>自适应配点残差重采样（RAR, Residual-based Adaptive Refinement）</strong>！</p>
+
+<h2>2 · 慢动作剖析：全时空 Burgers 工业代码实现</h2>
+
+<pre><code>import deepxde as dde
+import numpy as np
+import torch
+
+# 1. 物理参数: 极小粘性产生强烈非线性激波
+nu = 0.01 / np.pi
+
+# 2. 声明时空圆柱体几何体 (GeometryXTime)
+geom = dde.geometry.Interval(-1.0, 1.0)
+timedomain = dde.geometry.TimeDomain(0.0, 0.99)
+geomtime = dde.geometry.GeometryXTime(geom, timedomain)
+
+# 3. 声明时空 Burgers 偏微分方程残差
+def pde_burgers_spacetime(x, y):
+    # x 包含两列: x[:, 0] 是空间 x，x[:, 1] 是时间 t
+    # y 对应流速 u
+    # 3.1 空间一阶导 u_x 与时间一阶导 u_t
+    u_x = dde.grad.jacobian(y, x, i=0, j=0)
+    u_t = dde.grad.jacobian(y, x, i=0, j=1)  # 注意时间是第 1 维！
+    
+    # 3.2 空间二阶纯导 u_xx
+    u_xx = dde.grad.hessian(y, x, component=0, i=0, j=0)
+    
+    # 3.3 返回非线性 Burgers 残差
+    return u_t + y * u_x - nu * u_xx
+
+# 4. 边界与初始条件
+# 空间两端狄利克雷边界 u(-1, t) = 0, u(1, t) = 0
+bc = dde.icbc.DirichletBC(geomtime, lambda x: 0.0, lambda _, on_bnd: on_bnd)
+
+# 初始时刻波形 u(x, 0) = -sin(pi * x)
+def initial_condition(x):
+    # 必须保持二维张量 (N, 1)，利用切片 x[:, 0:1]
+    return -np.sin(np.pi * x[:, 0:1])
+
+ic = dde.icbc.IC(geomtime, initial_condition, lambda _, on_initial: on_initial)
+
+# 5. 数据装配与深层网络配置
+data = dde.data.TimePDE(
+    geomtime, pde_burgers_spacetime, [bc, ic],
+    num_domain=2500,    # 时空域随机配点
+    num_boundary=100,   # 空间边界配点
+    num_initial=160     # 初始时刻配点
+)
+
+# 搭建 4 层 40 隐藏神经元 MLP
+net = dde.nn.FNN([2] + [40] * 4 + [1], "tanh", "Glorot normal")
+model = dde.Model(data, net)
+
+# 6. 两阶段工业级优化: 先 Adam 预热，再 L-BFGS 精修
+model.compile("adam", lr=1e-3)
+model.train(iterations=2000)
+# 切换至 L-BFGS 强力二阶微调，强行切出垂直激波刃面！
+model.compile("L-BFGS")
+losshistory, train_state = model.train()</code></pre>
+
+<table>
+  <tr><th>API / 特性</th><th>数学物理内涵</th><th>工程关键细节</th></tr>
+  <tr><td><code>GeometryXTime</code></td><td>张量积时空连续流形 $\Omega 	imes [0, T]$</td><td>彻底砸碎离散步长与 CFL 时间红线束缚。</td></tr>
+  <tr><td><code>x[:, 0:1]</code> 切片</td><td>列切片防降维</td><td>若误写为 <code>x[:, 0]</code> 会丢失维度引发广播灾难。</td></tr>
+  <tr><td><code>L-BFGS</code> 二阶优化</td><td>利用拟牛顿曲率绝杀激波残差</td><td>在 Adam 预热后调用，收敛精度直接提升数个数量级。</td></tr>
+</table>
+
+<h2>3 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】激波陡峭前缘的梯度饥饿实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>用标准均匀随机采样的 PINN 求解时空粘性 Burgers 方程。当粘性 $
+u$ 从 $0.01 / \pi$ 减小到 $0.001 / \pi$ 时（激波过渡层极薄）：</p>
+    <p><strong>【请你先猜】</strong>使用纯 Adam 优化器能否高精度还原陡峭的激波跳跃？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>Adam 在训练 5000 步后损失停滞不前，激波陡峭跳跃被抹成平缓的钝坡，甚至出现伪负速度！</p>
+    <p><strong>【物理与数值归因】</strong><br>激波在整个时空域内只占据不到 1% 的微小局域体积。均匀随机采样的大部分配点都落在平缓区，贡献的梯度极度平庸；激波尖锐界面的巨大残差被稀释，导致网络遭遇‘梯度饥饿’。必须采用二阶 L-BFGS 微调优化，或引入自适应配点残差重采样（RAR, Residual-based Adaptive Refinement）！</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>3.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在定义全时空几何时，若空间为二维矩形、时间为一维区间，请补齐三维时空几何构建代码：</p>
+<pre><code># TODO [主动生成]: 声明 2D 矩形空间 + 1D 时间流形
+geom_space = dde.geometry.Rectangle([-1, -1], [1, 1])
+geom_time  = dde.geometry.TimeDomain(0, 1.0)
+# 请在下方组合出三维时空流形
+geom_spacetime = # 请补齐组合调用</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>geom_spacetime = dde.geometry.GeometryXTime(geom_space, geom_time)</code></pre>
+    <p><strong>【逐行 Why 注释】：</strong><code>GeometryXTime</code> 第一个参数接收任意维度的空间几何体，第二个参数接收时间域。网络输入张量将自动对齐为 3 列：<code>[x, y, t]</code>，原生支持高维时空全局无网格求解。</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>3.3 激波演化截面手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 激波形成时间心智模型对齐</span>
+  <p><strong>【初值形态】：</strong>$u(x, 0) = -\sin(\pi x)$ 在 $x \in [-1, 1]$ 上。<br>
+  在原点 $x=0$ 附近，泰勒展开为：$u(x, 0) pprox -\pi x$。斜率为负！波峰在左（$u>0$ 向右跑），波谷在右（$u<0$ 向左跑）。</p>
+  <p><strong>【推演任务】：</strong>求无粘条件下特征线最先在原点相撞形成激波的临界时间 $t_{	ext{break}}$。</p>
+  <details class="quiz">
+    <summary>▸ 查看相撞时间推演解答</summary>
+    <div class="a">
+      由特征线方法可知，波形破裂时间由初始最大负斜率的倒数决定：<br>
+      $t_{	ext{break}} = -rac{1}{\min(\partial_x u_0)} = -rac{1}{-\pi} = rac{1}{\pi} pprox 0.318	ext{ s}$！<br>
+      在 $t < 1/\pi$ 时波形平滑变陡；在 $t \ge 1/\pi$ 时激波正式诞生并持续耗散。PINN 必须在这个临界时间点精准切换曲率！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>在编写初始条件函数时，一位同学为了简写切片，写成了如下代码，导致显存瞬间被吃满：</p>
+  <pre><code>def ic_func(x):
+    # 试图提取第一列 x
+    return -np.sin(np.pi * x[:, 0])  # BUG! 返回形状为 (N,)</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出为什么 <code>x[:, 0]</code> 会丢失列维度？如何利用 Python 切片切出标准两维张量？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong>单下标切片 <code>x[:, 0]</code> 在 NumPy 中会执行降维操作，返回长度为 $N$ 的一维向量。当与输出张量 <code>(N, 1)</code> 做差时，PyTorch 广播机制会将两者相减扩展为 $N 	imes N$ 的万维矩阵！不仅显存瞬间激增，且计算出的均方误差完全失去物理意义。</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>def ic_func(x):
+    return -np.sin(np.pi * x[:, 0:1])  # 必须使用 0:1 保持 (N, 1) 列维度</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>4 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  时空统一不是把物理学变成玄学，而是给全宇宙拍一张高维全息相片！
+</div>
+
+<h3>4.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>把时间当作第四个空间维度一起算，为什么比一秒一秒往后推更高级？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>时空流形、时序因果、并行计算、椭圆化、初边值问题</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “一秒一秒推进就像看一本翻页小人书，你必须一页一页翻完前面的才能知道大结局；把时间当成空间，就像把整本小人书拆开、所有画页排成一面巨大的长廊墙壁。电脑能一瞬间俯瞰整场电影从开头到结尾的所有细节，并同时微调所有画面，哪怕中间有几张模糊的照片也能被前后的物理定律完美修补。”
+    </div>
+  </details>
+</div>
+
+<h3>4.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当时间终点 $T 	o 0$ 时，时空圆柱体塌缩为一个极薄切片，退化为纯空间初值赋范拟合。</li>
+  <li><strong>极限二（粘性趋于 0 时）：</strong>当 $
+u 	o 0$ 时，激波面坡度理论上趋于垂直，常规光滑神经网络遭遇严重的梯度爆炸，必须引入人工粘性或激波捕获正则项。</li>
+  <li><strong>极限三（时间不可逆性打破）：</strong>全时空求解将双曲动力系统在形式上“椭圆化”了。如果时间跨度拉得过长（如模拟上万秒），时间方向会丧失单向因果链的支配，导致深层网络陷入局部病态极小值；工业超长时序仍需结合时间分段推进（Time-marching PINN）。</li>
+</ul>
+
+<h3>4.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么很多人在算激波时，死命把配点数从 2000 点增加到 100 万点，结果不仅没有解决激波模糊，反而直接跑崩了显存？</p>
+  <p><strong>【真实底层】：</strong>因为<strong>盲目均匀撒点是最低效的算力自杀</strong>！100 万个点里有 99 万个都浪费在根本不需要算力的平缓区域。解决激波模糊的唯一正确工程路径，是<strong>自适应残差重采样（RAR）</strong>——让算法动态监视全域残差，哪里残差大（激波锋面），就在哪里自动密集补刀撒点；哪里平缓，就稀疏采点！用最少的配点锁死最锋利的界面，这才是高级科学家的手笔。</p>
+</div>
+
+<h2>5 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>全时空粘性激波无网格捕获验收！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>DEEPXDE-0004</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/pinn/p04_burgers_spacetime.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/pinn/p04_burgers_spacetime.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>全时空 Burgers 激波形成演化三维曲面及 $t=0.5$ 截面垂直陡峭前沿跳跃图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证时空统一连续建模能力，在无网格状态下成功捕获超临界粘性激波过渡层</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>激波跳跃界面在 $x=0$ 处斜率严格对齐基准，无反向虚假弥散振荡</strong></td></tr>
+</table>
+
+<h2>6 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 卷三终局之战：2D 泊松方程与 FDM 的跨轨巅峰较量！</span>
+  <p>致敬你的锐意进取！到这里，你已经征服了一维抛物线、常微分动力系统、以及最具挑战的时空非线性激波。</p>
+  <p>下一章我们将进入 <strong>第 20 章 · Capstone 终极对决：2D Poisson × FDM 双轨跨界较量</strong>！我们将迎来卷三的终局考核：让卷一推导的二维差分松弛求解器，与卷三训练的 DeepXDE 2D 连续势场求解器同台竞技！我们将逐点比对逐点误差云图，彻底讲透传统差分与神经隐式场在多维空间中的生死分水岭！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对全时空统一建模与激波梯度饥饿机制已通透掌握，请出题考查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0003-harmonic-oscillator-translation.html">← 第 18 章 · 阻尼振子迁移</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0005-capstone-poisson-fdm-comparison.html">第 20 章 · Capstone 终极对决：2D Poisson × FDM →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷三：工业级开源计算框架 DeepXDE 深度实战</p>
+</footer>
+
+</div>
+</body>
+</html>

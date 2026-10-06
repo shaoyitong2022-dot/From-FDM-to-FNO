@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 17 章 · DeepXDE 五件套 API 全景地图 · 规避混合偏导深水坑</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷三：工业级开源计算框架 DeepXDE 深度实战</p>
+  <h1>第 17 章 · DeepXDE 五件套 API 全景地图 · 规避混合偏导深水坑</h1>
+  <p class="meta">字数约 7,200 ｜ 建议学时：80 分钟 ｜ 核心架构：Jacobian/Hessian 索引规范 · i=1,j=1 对角线铁律 · 两阶段优化 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 扫清工业框架的暗礁与暗坑</span>
+  <p><strong>承接上章：</strong>第 16 章我们掌握了声明式五件套的基本架构。但在实际科研与工程中，初学者往往会被框架内部繁杂的 API 命名和多维张量索引搞得晕头转向。</p>
+  <p><strong>本章避坑指南：</strong><strong>DeepXDE 五大模块全景 API 地图与 Hessian 索引深水区（Step C-0002）</strong>。</p>
+  <p>在二维或三维空间中，求偏导数不再是一个孤立的标量操作，而是涉及全阶雅可比矩阵（Jacobian Matrix）与黑塞矩阵（Hessian Matrix）的行列切片。无数工程师因为把 <code>dde.grad.hessian(y, x, i=0, j=1)</code> 当成了 $y$ 轴二阶导数，导致模型陷入长达数周的不收敛绝境！本章我们将用纸笔彻底厘清索引规则，建立坚不可摧的工程防错体系！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 建立 DeepXDE 五大核心模块（geometry, icbc, data, nn, Model）的完整全局全景地图；<br>
+  ② 彻底破解多维空间下 <code>dde.grad.jacobian</code> 与 <code>dde.grad.hessian</code> 的行列双索引机制；<br>
+  ③ 实测证明误用非对角 Hessian 索引引发的 45 度虚假剪切畸变根因；<br>
+  ④ 掌握两阶段优化策略：Adam 粗调初探 + L-BFGS 二阶精修的工业级收敛秘诀。
+</div>
+
+<h2>1 · 工业全景解剖：DeepXDE 五大模块拓扑图谱</h2>
+
+<table>
+  <tr><th>模块命名空间</th><th>核心类与函数</th><th>工业职能定位</th></tr>
+  <tr><td><code>dde.geometry</code></td><td><code>Interval</code>, <code>Rectangle</code>, <code>Disk</code>, <code>CSGUnion</code>, <code>TimeDomain</code></td><td>流形空间定义、随机蒙特卡洛/Sobol 撒点、边界判定谓词生成。</td></tr>
+  <tr><td><code>dde.icbc</code></td><td><code>DirichletBC</code>, <code>NeumannBC</code>, <code>RobinBC</code>, <code>PeriodicBC</code>, <code>PointSetBC</code></td><td>施加定解条件、物理边界通量约束、融合离散实验传感器散点。</td></tr>
+  <tr><td><code>dde.data</code></td><td><code>PDE</code>, <code>TimePDE</code>, <code>FPDE</code></td><td>组织时空配点数据集、装配标量均方误差损失项、管理测试验证集。</td></tr>
+  <tr><td><code>dde.nn</code></td><td><code>FNN</code>, <code>ResNet</code>, <code>DeepONetCartesian</code></td><td>定义函数逼近神经网络算子结构，管理权重初始化与激活函数。</td></tr>
+  <tr><td><code>dde.Model</code></td><td><code>compile()</code>, <code>train()</code>, <code>predict()</code>, <code>save()</code></td><td>编译器、动态优化调度器（支持 Adam/L-BFGS）、模型持久化。</td></tr>
+</table>
+
+<h2>2 · 致命深水区：Hessian 矩阵的二维张量索引陷阱</h2>
+
+<p>设输入空间为二维坐标：$\mathbf{x} = (x_0, x_1) = (x, y)$，输出标量物理场为 $u$。</p>
+<p>黑塞矩阵（Hessian Matrix）是二阶偏导数组成的对称方阵：</p>
+$$H(u) = \begin{pmatrix}
+\frac{\partial^2 u}{\partial x_0^2} & \frac{\partial^2 u}{\partial x_0 \partial x_1} \\[6pt]
+\frac{\partial^2 u}{\partial x_1 \partial x_0} & \frac{\partial^2 u}{\partial x_1^2}
+\end{pmatrix} = \begin{pmatrix}
+H_{00} & H_{01} \\[6pt]
+H_{10} & H_{11}
+\end{pmatrix}$$
+
+<div class="box debug">
+  <span class="box-title">◆ 致命血泪 Bug 警示录</span>
+  在很多人的直觉中，既然第一个自变量是 0，第二个自变量是 1，那么：<br>
+  “求第一个自变量的二阶导写 <code>(i=0, j=0)</code>，那求第二个自变量的二阶导不就是写 <code>(i=0, j=1)</code> 吗？”<br>
+  <strong>大错特错！</strong><br>
+  在 <code>dde.grad.hessian(y, x, component=0, i=0, j=1)</code> 中，参数 <code>i</code> 和 <code>j</code> 代表的是 <strong>Hessian 矩阵的第 i 行和第 j 列</strong>！<br>
+  <code>i=0, j=1</code> 提取的是<strong>混合交叉偏导数 $\frac{\partial^2 u}{\partial x \partial y}$</strong>！它衡量的是流场的扭曲剪切，根本不是纵向曲率！<br>
+  正确的纵向二阶纯导数 $\frac{\partial^2 u}{\partial y^2}$ 必须写成：<strong><code>i=1, j=1</code>（第 1 行第 1 列的对角元素）</strong>！
+</div>
+
+<h2>3 · 工业级参考模版：二维稳态拉普拉斯算子严密声明</h2>
+
+<pre><code>import deepxde as dde
+import torch
+
+# 声明二维直角坐标系下的拉普拉斯算子: d^2u/dx^2 + d^2u/dy^2 = 0
+def pde_laplace_2d(x, y):
+    # x[:, 0] 为 x 坐标，x[:, 1] 为 y 坐标
+    # 1. 横向纯二阶导: d^2u / dx^2 (第 0 行第 0 列)
+    u_xx = dde.grad.hessian(y, x, component=0, i=0, j=0)
+    
+    # 2. 纵向纯二阶导: d^2u / dy^2 (★ 必须是第 1 行第 1 列！)
+    u_yy = dde.grad.hessian(y, x, component=0, i=1, j=1)
+    
+    # 3. 返回拉普拉斯残差
+    return u_xx + u_yy</code></pre>
+
+<table>
+  <tr><th>API 调用语法</th><th>提取的数学偏导</th><th>物理几何含义</th><th>常见失误</th></tr>
+  <tr><td><code>jacobian(y, x, i=0, j=0)</code></td><td>$\frac{\partial y_0}{\partial x_0}$</td><td>水平速度梯度 $\partial u / \partial x$</td><td><code>j</code> 对应自变量坐标轴索引。</td></tr>
+  <tr><td><code>jacobian(y, x, i=0, j=1)</code></td><td>$\frac{\partial y_0}{\partial x_1}$</td><td>垂直速度梯度 $\partial u / \partial y$</td><td>若为多输出场，<code>i</code> 对应场分量。</td></tr>
+  <tr><td><code>hessian(y, x, i=0, j=0)</code></td><td>$\frac{\partial^2 y}{\partial x_0^2}$</td><td>水平方向纯二阶曲率 $\partial_{xx} u$</td><td>对角线元素。</td></tr>
+  <tr><td><code>hessian(y, x, i=1, j=1)</code></td><td>$\frac{\partial^2 y}{\partial x_1^2}$</td><td>垂直方向纯二阶曲率 $\partial_{yy} u$</td><td><strong>严禁误写成 <code>i=0, j=1</code>！</strong></td></tr>
+</table>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】多输入维度下 Jacobian vs Hessian 语法陷阱实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>在二维空间 $(x_0, x_1)$ 中求解偏微分方程。工程师需要提取二阶偏导 $\frac{\partial^2 y}{\partial x_1^2}$。如果在代码中写成了 <code>dde.grad.hessian(y, x, i=0, j=1)</code>：</p>
+    <p><strong>【请你先猜】</strong>这个 API 返回的是目标二阶导吗？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>模型完全无法收敛，解的等高线云图发生诡异的 45 度对角线倾斜畸变！</p>
+    <p><strong>【物理与数值归因】</strong><br><code>i=0, j=1</code> 提取的是 Hessian 矩阵的非对角非纯导分量——混合偏导数 $\frac{\partial^2 y}{\partial x_0 \partial x_1}$！真实的 $\frac{\partial^2 y}{\partial x_1^2}$ 在 Hessian 矩阵的第 2 行第 2 列，必须调用 <code>i=1, j=1</code>！这是所有 DeepXDE 开发者最易阵亡的深水坑！</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在求解包含非线性交叉剪切的二维流体时，需要提取混合偏导数 $\frac{\partial^2 u}{\partial x \partial y}$。请填入正确的索引调用：</p>
+<pre><code># TODO [主动生成]: 提取混合交叉二阶偏导 d^2u / (dx dy)
+d2u_dxdy = # 请补齐 hessian 调用参数（输入 component, i, j）</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>d2u_dxdy = dde.grad.hessian(y, x, component=0, i=0, j=1)</code></pre>
+    <p><strong>【底层机理解析】：</strong>黑塞矩阵在光滑函数下服从 Schwarz 对称定理（混合导数与求导次序无关），因此 <code>i=0, j=1</code> 与 <code>i=1, j=0</code> 在数学上完全等价，提取的正是水平与竖直维度的交叉剪切分量！</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>4.3 多输出张量分量手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 速度矢量场多输出解剖</span>
+  <p><strong>【系统定义】：</strong>二维流场具有两个速度分量 $\mathbf{u} = (u, v)$，网络输出维度为 2（<code>y[:, 0]</code> 代表 $u$，<code>y[:, 1]</code> 代表 $v$）。</p>
+  <p><strong>【推演任务】：</strong>写出计算连续性方程散度 $\nabla \cdot \mathbf{u} = \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y}$ 的具体两行 DeepXDE API。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准解答</summary>
+    <div class="a">
+      1. 水平速度对 $x$ 导数：<code>du_dx = dde.grad.jacobian(y, x, i=0, j=0)</code>（第 0 个输出对第 0 个自变量）；<br>
+      2. 纵向速度对 $y$ 导数：<code>dv_dy = dde.grad.jacobian(y, x, i=1, j=1)</code>（第 1 个输出对第 1 个自变量）；<br>
+      3. 散度残差：<code>divergence = du_dx + dv_dy</code>！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位研究员在配置多任务损失权重时写下了如下代码，程序抛出 <code>IndexError: list index out of range</code>：</p>
+  <pre><code># 问题包含 1 个 PDE 和 2 个边界条件 (总共 3 项损失)
+model.compile("adam", lr=0.001, loss_weights=[1.0, 10.0])  # BUG!</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出 <code>loss_weights</code> 的长度为什么必须与总损失项数严格一一对应？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong>DeepXDE 在编译时会将问题的所有损失项排成一个全局平坦列表：<code>[loss_pde, loss_bc1, loss_bc2, ...]</code>。框架在加权求和时会严格通过下标 <code>loss_weights[i]</code> 提取对应系数。如果列表长度少于损失项数量，直接触发列表索引越界崩溃！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>model.compile("adam", lr=0.001, loss_weights=[1.0, 10.0, 10.0])</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  矩阵索引不是计算机的凭空规定，而是空间多维度相互垂直投射的数学必然！
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>为什么在平面上算弯曲程度，除了算前后弯、左右弯，还必须算一个斜着拧麻花的量？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>黑塞矩阵、混合偏导、微分几何、张量、正交基</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “如果一张纸只是向上卷成圆筒，你只需要量出它前后方向有多弯；但如果你拿着毛巾的两头朝相反方向用力拧，毛巾不仅变弯，整张布面还会斜着拧出一条条麻花一样的旋转褶皱。这个‘斜着拧’的动作在任何单一方向都测不出来，必须同时测量横向和纵向是如何互相扭在一起的。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当边界点采样数 <code>num_boundary = 0</code> 时，问题丧失定解条件，数学上解非唯一。</li>
+  <li><strong>极限二（非线性优化切换极限）：</strong>Adam 优化器擅长逃离鞍点，但在一阶平缓平原上收敛极其缓慢；L-BFGS 二阶拟牛顿法利用二阶曲率信息，能在十几步内将残差从 $10^{-3}$ 强力压降至机器极限 $10^{-8}$！两阶段结合是工业收敛标准范式。</li>
+  <li><strong>极限三（几何奇异凹角点）：</strong>若计算域包含 L 形凹角，根据弹性力学理论，凹角顶点处应力集中导致导数趋向无穷大，常规点配点采样必须配合奇异基函数或局域自适应加密。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么很多人在用 DeepXDE 时，一开始就直接上 L-BFGS 二阶优化器，结果算例一瞬间就报错崩溃或陷入死循环？</p>
+  <p><strong>【真实底层】：</strong>因为 L-BFGS 依赖局部二次型泰勒展开！在训练最早期，网络权重完全随机，损失曲面极度崎岖且充满高度非凸噪声，此时的二阶曲率估计完全是南辕北辙的虚假信息，会导致 L-BFGS 的线搜索步长直接步入悬崖！工业最佳实践是：<strong>先用 Adam 跑 1000~3000 步将系统推进至平缓的局部凸洼地，再召唤 L-BFGS 执行二阶致命绝杀！</strong></p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>Hessian 索引单元测试：严格核验对角纯导与非对角剪切的分离！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>DEEPXDE-0002</td></tr>
+  <tr><th>对接内核模块</th><td><code>tests/test_pinn_gradients.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe -m unittest tests.test_pinn_gradients.TestPINNGradients.test_deepxde_hessian_indices</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>DeepXDE 五大模块相互依赖拓扑流向图与 Hessian 矩阵索引对齐切片图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>精确掌握 Jacobian 与 Hessian 的输入索引规范，消除混合偏导致命暗坑</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>Hessian 对角索引 (0,0) 与 (1,1) 解析导数单元测试通过率 100%</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：手搓内核向工业框架的胜利大迁移！</span>
+  <p>到这里，你已经扫清了 DeepXDE 的所有语法暗礁与张量索引陷阱。但是，一个优秀的工程师必须具备“将底层代码无缝迁移到工业生态”的重构能力。</p>
+  <p>下一章我们将进入 <strong>第 18 章 · 阻尼谐振子手写 PyTorch 到 DeepXDE 对照迁移</strong>！我们将把卷二中辛辛苦苦手搓的欠阻尼振子求解器，逐行平移为优雅精炼的 DeepXDE 代码；学习如何用 <code>PointSetBC</code> 优雅地将现实世界中稀疏的传感器离散测量点注入物理框架，体会工业生态带来的巨大生产力红利！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对 Hessian 矩阵双索引与五大模块 API 已建立肌肉记忆，请对我进行口试抽查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0001-setup-first-pinn.html">← 第 16 章 · DeepXDE 工业框架点火</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0003-harmonic-oscillator-translation.html">第 18 章 · 阻尼振子手写 PyTorch 到 DeepXDE 对照迁移 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷三：工业级开源计算框架 DeepXDE 深度实战</p>
+</footer>
+
+</div>
+</body>
+</html>

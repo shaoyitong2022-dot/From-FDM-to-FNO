@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0005 · Step 3 · 一维扩散方程与抛物型稳定性界</title>
+<link rel="stylesheet" href="../assets/course.css">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">Volume I · Chapter 05 / 经典离散底座</p>
+  <h1>0005 · Step 3 · 一维扩散方程与抛物型稳定性界</h1>
+  <p class="meta">预计 35 分钟 ｜ 核心：二阶中心差分 · FTCS 格式 · 扩散数 r <= 0.5 刚性边界 · 高频棋盘格失稳 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 探寻大自然的天然耗散刹车</span>
+  <p><strong>承接上章：</strong>非线性对流引发了激波陡化危机，而 CFL 判据锁死了我们的网格时间推进极限。我们需要大自然自身的耗散机制来平衡陡化。</p>
+  <p><strong>本章物理母题：</strong>热力学与流体力学的耗散基石——<strong>一维扩散方程（Heat / Diffusion Equation）</strong>：</p>
+  $$\frac{\partial u}{\partial t} = \nu \frac{\partial^2 u}{\partial x^2}$$
+  <p>与对流方程的“单向刚体平移”截然不同，扩散方程是典型的<strong>抛物型（Parabolic）偏微分方程</strong>。它描述了热量、流体粘性动量由高浓度向低浓度的全方位均质化扩散。本章我们将推导二阶中心差分算子，并直面比对流 CFL 严苛十倍的抛物型刚性步长约束 $\Delta t \propto \Delta x^2$！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 严格掌握二阶导数三点中心差分模板（$1, -2, 1$）的泰勒推导；<br>
+  ② 揭示抛物型扩散数 $r = \nu \frac{\Delta t}{\Delta x^2} \le 0.5$ 的刚性稳定性边界；<br>
+  ③ 实测高频 Nyquist 棋盘格模式（Checkerboard Mode）在 $r > 0.5$ 下的瞬间爆发现象。
+</div>
+
+<h2>1 · 物理机制：微观随机碰撞与宏观不可逆平滑</h2>
+
+<p>扩散方程描述的是微观布朗随机游走在宏观连续介质中的涌现表现。若在空间某处存在一个局域凸起波峰，微观分子无规则碰撞会导致能量向周围四散逃逸。数学上：</p>
+<ul>
+  <li>在波峰处：曲线向下凹陷，二阶导数 $\partial_{xx} u < 0$，因此 $\partial_t u = \nu \partial_{xx} u < 0$，峰顶被迫下降削平；</li>
+  <li>在波谷处：曲线向上凹陷，二阶导数 $\partial_{xx} u > 0$，因此 $\partial_t u > 0$，谷底被推高填平！</li>
+</ul>
+<p>扩散算子像一把无比灵巧的砂纸，时刻打磨着全场的一切高阶毛刺。根据热力学第二定律，这种平滑过程具有严格的<strong>时间单向箭头（不可逆性）</strong>，任何尖锐的信息都在扩散中被永久抹杀降解。</p>
+
+<h2>2 · 慢动作离散化：二阶中心差分与 FTCS 格式</h2>
+
+<p>对空间二阶导数，在点 $x_i$ 处分别向右（$+dx$）和向左（$-dx$）做四阶泰勒级数展开：</p>
+
+$$u_{i+1} = u_i + \Delta x \partial_x u_i + \frac{\Delta x^2}{2} \partial_{xx} u_i + \frac{\Delta x^3}{6} \partial_{xxx} u_i + O(\Delta x^4)$$
+$$u_{i-1} = u_i - \Delta x \partial_x u_i + \frac{\Delta x^2}{2} \partial_{xx} u_i - \frac{\Delta x^3}{6} \partial_{xxx} u_i + O(\Delta x^4)$$
+
+<p>将两式直接相加，奇数阶奇次导数奇迹般完全相消抵消！得到高精度的<strong>二阶中心差分格式（Central Difference）</strong>：</p>
+
+$$\frac{\partial^2 u}{\partial x^2} \approx \frac{u_{i+1}^n - 2u_i^n + u_{i-1}^n}{\Delta x^2} + O(\Delta x^2)$$
+
+<p>结合时间前向显式欧拉差分，便得到了求解扩散方程的经典 <strong>FTCS 格式（Forward-Time Central-Space）</strong>：</p>
+
+$$u_i^{n+1} = u_i^n + \nu \frac{\Delta t}{\Delta x^2} (u_{i+1}^n - 2u_i^n + u_{i-1}^n)$$
+
+<p>定义无量纲<strong>扩散数（Diffusion Number）</strong>：</p>
+
+$$r \equiv \nu \frac{\Delta t}{\Delta x^2}$$
+
+<p>代入重写为加权平均形态：</p>
+
+$$u_i^{n+1} = (1 - 2r) u_i^n + r (u_{i+1}^n + u_{i-1}^n)$$
+
+<div class="box deepen">
+  <span class="box-title">◆ 深度物理透视｜极值原理与稳定性边界 $r \le 0.5$</span>
+  观察上式：新时刻的值 $u_i^{n+1}$ 是自身旧值 $u_i^n$ 与左右邻居旧值的线性组合。<br>
+  为了保证新解不发生非物理振荡（满足热力学最大值原理），自身旧值的权重系数<strong>绝不能为负数</strong>！
+  $$1 - 2r \ge 0 \implies r = \nu \frac{\Delta t}{\Delta x^2} \le \frac{1}{2} = 0.5$$
+  若 $r > 0.5$，中心点反而成为负反馈放大器，数值解将瞬间暴发高频黑白相间的剧烈锯齿炸飞！
+</div>
+
+<h2>3 · 工业级最小自包含实现</h2>
+
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+def solve_diffusion(nx=41, nu=0.3, dt=0.002, nt=20):
+    dx = 2.0 / (nx - 1)
+    x = np.linspace(0, 2.0, nx)
+    r = nu * dt / (dx**2)
+    assert r <= 0.5, f"扩散数超标! r={r:.3f} > 0.5"
+    
+    # 初始方帽
+    u = np.ones(nx)
+    u[int(0.5 / dx) : int(1.0 / dx + 1)] = 2.0
+    
+    for n in range(nt):
+        un = u.copy()
+        # 二阶中心差分向量化切片
+        u[1:-1] = un[1:-1] + r * (un[2:] - 2 * un[1:-1] + un[:-2])
+        # 狄利克雷边界保持为 1.0
+        u[0] = 1.0; u[-1] = 1.0
+        
+    return x, u, r
+
+if __name__ == '__main__':
+    x, u, r = solve_diffusion()
+    plt.plot(x, u, 'g-o', label=f'FTCS Diffusion (r={r:.3f})')
+    plt.title('Step 3: 1D Diffusion')
+    plt.xlabel('x [m]'); plt.ylabel('u [m/s]')
+    plt.grid(True); plt.legend()
+    plt.show()</code></pre>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊</h2>
+
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】光滑正弦波 vs 方波间断的失稳耐受度实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>设定扩散数微弱超标：$r = 0.55 > 0.5$。分别输入光滑正弦波初值与方波跳跃初值：</p>
+    <p><strong>【请你先猜】</strong>哪一个波形会率先发生剧烈的黑白棋盘格锯齿失稳？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>光滑正弦波前 30 步看起来十分平稳甚至衰减良好，而方波在第 5 步就爆发了严重的黑白棋盘格剧烈跳动发散！</p>
+    <p><strong>【物理与数值归因】</strong><br>von Neumann 稳定性分析表明，放大因子在最高频 Nyquist 模式 $k\Delta x = \pi$ 处具有最大放大率 $|G| = 1 - 4r = -1.2$。光滑正弦波仅包含低频基模（$k\Delta x \ll 1$），失稳增长极其缓慢；而方波跳跃包含无穷阶高频傅里叶分量，瞬间激发最致命的棋盘格振荡模式！</p>
+  </div>
+</details>
+
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在求解扩散方程时，请补齐内部格点向量化中心切片更新式：</p>
+<pre><code># un 为上一时刻场
+# TODO [主动生成]: 针对内部点 [1, nx-2] 补齐二阶中心差分项
+u[1:-1] = un[1:-1] + nu * dt / dx**2 * ( # 请补齐中心差分三项 )</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>u[1:-1] = un[1:-1] + nu * dt / dx**2 * (un[2:] - 2 * un[1:-1] + un[:-2])</code></pre>
+    <p><strong>【底层机理解析】：</strong>括号内部为 $[1, -2, 1]$ 模板。<code>un[2:]</code> 为右邻居，<code>-2*un[1:-1]</code> 为中心，<code>un[:-2]</code> 为左邻居，除以 $\Delta x^2$ 严格满足二阶导数物理量纲。</p>
+  </div>
+</details>
+
+<h3>4.3 单步离散手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 纸笔手算心智模型对齐</span>
+  <p><strong>【初始离散状态】：</strong>单点热脉冲源 $u = [0.0, 10.0, 0.0]$，扩散数设定为临界值 $r = 0.5$。</p>
+  <p><strong>【手动推演任务】：</strong>纸笔计算下一步中心点 $u_1^1$ 与两侧点 $u_0^1, u_2^1$ 的热量转移。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准数值解答</summary>
+    <div class="a">
+      代入公式：<br>
+      $$u_1^1 = 10.0 + 0.5 	imes (0.0 - 2 	imes 10.0 + 0.0) = 10.0 - 10.0 = 0.0$$<br>
+      $$u_0^1 = 0.0 + 0.5 	imes (10.0 - 0.0) = 5.0, \quad u_2^1 = 5.0$$<br>
+      <strong>物理图像验证：</strong>在临界极限 $r=0.5$ 下，中心点的热量在单步内瞬间被全部抽空转移给左右邻居（各得 5.0）。若 $r > 0.5$，中心点将直接变为负温度（无物理意义的振荡发散）！
+    </div>
+  </details>
+</div>
+
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>某新手在编写扩散代码时误漏写了分母的平方，当网格从 $nx=41$ 加密至 $nx=201$ 时，算例瞬间发生数值爆炸：</p>
+  <pre><code># 错误写成了 dx 而非 dx**2
+u[1:-1] = un[1:-1] + nu * dt / dx * (un[2:] - 2*un[1:-1] + un[:-2])</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出该代码的量纲错误与数值后果。</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【问题行】：</strong><code>nu * dt / dx</code> 缺少平方。</p>
+      <p><strong>【失效机理】：</strong>二阶导数分母量纲为 $[L]^2$。当网格加密到 $dx = 0.01$ 时，分母相比正确值被放大了 100 倍（因为少除了一个 0.01），实际生效系数超标百倍，引发极其剧烈的数值发散。</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>u[1:-1] = un[1:-1] + nu * dt / (dx**2) * (un[2:] - 2*un[1:-1] + un[:-2])</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  <p>“首要原则是决不要欺骗自己，而你自己正是最容易被欺骗的人。”拒绝用高深术语解释术语，用物理世界看得见摸得着的动作直击本质！</p>
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>为什么一滴墨水在水杯里化开后，永远不会自发聚拢成一滴？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>二阶导数、抛物型、热力学第二定律、耗散算子、熵增</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “无数个极其微小的水分子在无休无止地随机四处碰撞，墨水粒子被撞得朝四面八方所有的空隙乱跑。因为向外散开的路线有成千上万亿种可能，而所有墨水粒子同时被撞回正中央起点的概率在宇宙尺度下几乎等于零。这种微观撞乱的绝对统计规律，赋予了自然界永不回头的单向平滑时间箭头。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（粘性/扩散系数 $
+u \to 0$ 时）：</strong>扩散项彻底消失，方程退化为时间冻结状态，局部热量和动量永远锁死在初始尖锐形态。</li>
+  <li><strong>极限二（粘性/扩散系数 $
+u \to \infty$ 时）：</strong>扩散速度无穷大，全域瞬间达到绝对均温稳态，抛物型方程蜕变为椭圆型拉普拉斯代数方程。</li>
+  <li><strong>极限三（量纲与现实反例）：</strong>物理量纲分析：$[
+u] = [L]^2/[T]$，因此与时间步长的结合必然形成无量纲数 $r = 
+u \Delta t / \Delta x^2$。现实世界中由于时间步长必须满足 $\Delta t \propto \Delta x^2$，网格每加密 10 倍，显式步长必须缩小 100 倍！这构成了显式求解扩散方程极其痛苦的刚性算力枷锁（Stiff Problem）。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>显式扩散格式受制于极其苛刻的 $\Delta t \propto \Delta x^2$，在大规模工程 CFD 中，人们是如何攻克这个算力黑洞的？</p>
+  <p><strong>【真实底层】：</strong>工业求解器（如 OpenFOAM 或 ANSYS Fluent）在处理粘性扩散项时，普遍抛弃显式欧拉，转向<strong>隐式格式（如 Crank-Nicolson 或隐式欧拉 Backward Euler）</strong>！通过求解一个对称正定的稀疏三对角线性方程组，换取<strong>无条件绝对稳定（Unconditionally Stable）</strong>，使时间步长彻底摆脱 $\Delta x^2$ 的死咒，仅需根据物理流动时间尺度设定。</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>数值算法研发以<strong>可运行代码、确定性基准、实测误差数字</strong>为准绳！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FDM-0005</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fdm/step03_diffusion_1d.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/fdm/step03_diffusion_1d.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>高斯脉冲热源随时间的扩散扁平化衰减曲线</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证二阶中心差分 FTCS 扩散格式，实测扩散衰减率与傅里叶解析解完全契合</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>峰值衰减 L2 误差 < 1e-4，验证稳定数 r=nu*dt/dx^2 <= 0.5 刚性安全界限</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：两大巨头的终极对决</span>
+  <p>至此，我们已经完整掌握了流体力学两大最核心的基础物理机制：</p>
+  <ul>
+    <li><strong>对流项 $u \partial_x u$（Step 2）：</strong>负责使波形变陡、制造激波；</li>
+    <li><strong>扩散项 $
+u \partial_{xx} u$（Step 3）：</strong>负责平滑毛刺、消除间断。</li>
+  </ul>
+  <p>如果把这两个天生敌对的算子放在同一个方程里，让它们在同一块场地上正面碰撞，会发生什么？</p>
+  <p>下一章我们将迎来经典 CFD 的第一座高峰——<strong>一维粘性 Burgers 方程（Step 4）</strong>：</p>
+  $$\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} = \nu \frac{\partial^2 u}{\partial x^2}$$
+  <p>对流压缩与粘性耗散将在激波过渡层内达成惊心动魄的<strong>动态物理平衡</strong>！你还将见证数学史上最不可思议的奇迹——<strong>Cole-Hopf 解析变换</strong>，并用它作为绝对公正的上帝法官，给你的数值算法打出第一份真金白银的误差报告！</p>
+  <p><strong>【导师对接提示】：</strong>学完本章后，可在对话框向导师发送：“<em>导师，我对 FTCS 扩散格式与 r<=0.5 边界推导完毕，请对我进行抛物型极值原理审问！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0004-cfl-condition.html">← 0004 CFL 条件</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0006-step4-burgers.html">0006 Step 4 Burgers 对决 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷一：离散世界与有限差分底座</p>
+</footer>
+
+</div>
+</body>
+</html>

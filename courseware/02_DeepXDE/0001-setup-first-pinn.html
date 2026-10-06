@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 16 章 · DeepXDE 工业框架点火 · 声明式五件套与 1D 抛物线基准</title>
+<link rel="stylesheet" href="../assets/course.css">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷三：工业级开源计算框架 DeepXDE 深度实战</p>
+  <h1>第 16 章 · DeepXDE 工业框架点火 · 声明式五件套与 1D 抛物线基准</h1>
+  <p class="meta">字数约 6,800 ｜ 建议学时：75 分钟 ｜ 核心架构：声明式五件套 · 自动化二阶调度 · 几何采样敏感性 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 走向工业级生产力底座</span>
+  <p><strong>承接上卷：</strong>在卷二中，我们用纯手写 PyTorch 深入到自动微分计算图的最底层，摸清了 $C^\infty$ 激活函数、元微分保留机制与多任务梯度病理。你已经掌握了 PINN 的五脏六腑。</p>
+  <p><strong>本章工程跃迁：</strong>从“手搓玩具轮子”跨入<strong>世界级工业生产力框架——DeepXDE</strong>！</p>
+  <p><strong>本章核心使命：</strong>师从宾夕法尼亚大学/布朗大学 Lu Lu（陆路）教授团队开源的世界级 SciML 标杆框架 DeepXDE。我们将学习其核心的<strong>声明式五件套设计哲学（Geometry, IC/BC, PDE, Net, Model）</strong>，在一维泊松抛物线基准 $-u'' = 1$ 上完成 DeepXDE 点火，验证其托管式动态配点与自动化优化调度流水线！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 掌握 DeepXDE 架构“声明式装配（Declarative Architecture）”的心智法则；<br>
+  ② 熟练运用五件套口诀（几何域、因果边界、物理方程、网络结构、编译求解器）搭建工业算例；<br>
+  ③ 洞察配点采样密度对二阶微分曲率约束的硬门槛（实测 4 点塌陷 vs 16 点刚性收敛）；<br>
+  ④ 产出人生第一个基于工业生态库求解的高精度抛物线解析基准解。
+</div>
+
+<h2>1 · 工业级架构哲学：从命令式循环到声明式装配</h2>
+
+<p>在原生 PyTorch 中，我们必须人肉手写以下样板代码：</p>
+<ul>
+  <li>手动采样配点张量并设置 <code>requires_grad=True</code>；</li>
+  <li>手动编写两层 <code>torch.autograd.grad</code> 评估导数；</li>
+  <li>手动拼接多任务均方误差并调用 <code>optimizer.zero_grad()</code>；</li>
+  <li>手动编写 <code>for epoch in range(steps)</code> 外层训练循环。</li>
+</ul>
+
+<p>这种命令式（Imperative）代码在面对复杂三维工业构型或多物理场耦合时，会极其容易陷入繁琐易错的维度灾难。而 DeepXDE 采用了高层<strong>声明式哲学（Declarative Programming）</strong>：</p>
+<div class="box deepen">
+  <span class="box-title">◆ 工业解耦：你负责提物理需求，框架负责底层实现</span>
+  工程师只需像写论文摘要一样，向框架“声明”三件事：<br>
+  1. <strong>求解域在哪里</strong>（<code>dde.geometry</code>）；<br>
+  2. <strong>物理守恒定律是什么</strong>（<code>dde.grad</code> 定义的无量纲微分方程）；<br>
+  3. <strong>边界与初始状态怎么给</strong>（<code>dde.icbc</code>）。<br>
+  如何高效采样、如何自动矢量化求导、如何分阶段从 Adam 平滑切换到 L-BFGS 二阶精修，全由底层 <code>dde.Model</code> 引擎全自动托管！
+</div>
+
+<h2>2 · 慢动作剖析：经典五件套声明式标准流水线</h2>
+
+<pre><code>import deepxde as dde
+import numpy as np
+
+# 1. 第一件套：定义几何计算域 (Geometry)
+geom = dde.geometry.Interval(0.0, 1.0)
+
+# 2. 第二件套：声明控制物理方程残差 (PDE)
+def pde_poisson(x, y):
+    # -u''(x) - 1 = 0
+    dy_xx = dde.grad.hessian(y, x)
+    return -dy_xx - 1.0
+
+# 3. 第三件套：声明物理边界条件 (IC/BC)
+def boundary_func(x, on_boundary):
+    return on_boundary
+
+bc = dde.icbc.DirichletBC(geom, lambda x: 0.0, boundary_func)
+
+# 4. 第四件套：数据配置器总装 (PDE Data)
+data = dde.data.PDE(
+    geom, pde_poisson, bc, 
+    num_domain=16,      # 内部配点采样数
+    num_boundary=2,     # 边界配点采样数
+    solution=lambda x: 0.5 * x * (1.0 - x),  # 注入解析解用于精度跟踪
+    num_test=100        # 独立未见测试点
+)
+
+# 5. 第五件套：声明网络与编译器 (Net & Model)
+net = dde.nn.FNN([1] + [20] * 3 + [1], "tanh", "Glorot uniform")
+model = dde.Model(data, net)
+model.compile("adam", lr=1e-3)
+losshistory, train_state = model.train(iterations=3000)</code></pre>
+
+<table>
+  <tr><th>五件套组件</th><th>DeepXDE API 映射</th><th>底层数学物理含义</th><th>工程规范防错</th></tr>
+  <tr><td>① 几何域</td><td><code>dde.geometry.Interval</code></td><td>一维连续有界流形 $\Omega = [0, 1]$</td><td>定义配点生成的几何空间包络。</td></tr>
+  <tr><td>② 控制方程</td><td><code>dde.grad.hessian(y, x)</code></td><td>偏微分算子评估 $\mathcal{F}[u] = -u'' - 1$</td><td>必须使得精确解代入后残差为 0。</td></tr>
+  <tr><td>③ 边界条件</td><td><code>dde.icbc.DirichletBC</code></td><td>本质狄利克雷约束 $u(0)=u(1)=0$</td><td><code>boundary_func</code> 必须对边界返回 <code>True</code>。</td></tr>
+  <tr><td>④ 问题装配</td><td><code>dde.data.PDE</code></td><td>时空采样器与残差均方误差构建器</td><td><code>num_domain</code> 必须满足曲率几何充分性。</td></tr>
+  <tr><td>⑤ 模型网络</td><td><code>dde.nn.FNN</code> + <code>dde.Model</code></td><td>多层感知机参数化与优化调度器</td><td>隐藏层统一指定 <code>tanh</code> 光滑激活函数。</td></tr>
+</table>
+
+<h2>3 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】计算域配点密度与收敛精度分水岭实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>求解一维泊松方程 $-u'' = 1, x \in [0, 1], u(0)=u(1)=0$（严格解析解为抛物线 $u=0.5x(1-x)$，顶点 0.125）。将域内采样点从 16 点（num_domain=16）极端削减为仅 4 点（num_domain=4）：</p>
+    <p><strong>【请你先猜】</strong>网络还能通过反向传播收敛到正确的抛物线顶点高度吗？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>网络输出的顶点高度严重塌陷（仅为约 0.08），两端曲率完全变形失真！</p>
+    <p><strong>【物理与数值归因】</strong><br>二阶微分算子需要充分的连续几何支集来约束弯曲自由度。4 个配点提供的代数残差自由度严重不足，优化器在极小值空间内找到了过平缓的次优曲面。16 点是该简单抛物线刚性收敛的临界最小基准线。</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>3.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在 DeepXDE 中定义一维对流扩散方程 $u_t + c u_x = 
+u u_{xx}$ 的稳态残差 $-c u_x + 
+u u_{xx} = 0$。请补齐纯偏导声明：</p>
+<pre><code># TODO [主动生成]: 声明对流扩散稳态 PDE 残差
+def pde_adv_diff(x, y):
+    dy_x = dde.grad.jacobian(y, x, i=0, j=0)
+    # 请在下方用 hessian 计算二阶导并返回对流与扩散的合力残差
+    dy_xx = # 请补齐 hessian 调用
+    return -c * dy_x + nu * dy_xx</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>dy_xx = dde.grad.hessian(y, x, i=0, j=0)
+return -c * dy_x + nu * dy_xx</code></pre>
+    <p><strong>【底层机理解析】：</strong>在单变量一维问题中，输入特征只有 0 号索引，因此 <code>jacobian</code> 与 <code>hessian</code> 的指标参数均为 <code>i=0, j=0</code>。物理残差等于 0 意味着流体对流携带的动量增量与分子粘性耗散达到严密微观守恒平衡。</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>3.3 声明式数据流单步推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 工业解耦数据流心智模型对齐</span>
+  <p><strong>【核心模块】：</strong><code>geom</code>, <code>pde</code>, <code>bc</code>, <code>data</code>, <code>net</code>, <code>model</code>。</p>
+  <p><strong>【推演任务】：</strong>画出从 Python 代码执行到最终 GPU 权重更新的五级数据流水线拓扑图。</p>
+  <details class="quiz">
+    <summary>▸ 查看流水线标准推演解答</summary>
+    <div class="a">
+      1. <code>geom</code> 提供时空采样几何边界，向 <code>data</code> 输送内部配点与边界点坐标；<br>
+      2. <code>data</code> 调用 <code>net</code> 进行前向传播得到初生预测张量 $\hat{y}$；<br>
+      3. <code>pde</code> 与 <code>bc</code> 接收 $\hat{y}$ 与坐标，由 <code>dde.grad</code> 计算 Jacobian/Hessian，构建各自分立的标量 Loss；<br>
+      4. <code>model</code> 依据编译时设定的 <code>loss_weights</code> 合成标量总损失；<br>
+      5. 反向传播引擎更新 <code>net</code> 中的权重矩阵 $W, b$！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>3.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位开发者在编写边界判定谓词时，误写了如下代码，导致网络在全域收敛为任意常数漂移解：</p>
+  <pre><code># 错误代码：边界谓词恒常返回 False
+def boundary(x, on_boundary):
+    # 误以为只要写了函数就行，随手写了 return False
+    return False
+
+bc = dde.icbc.DirichletBC(geom, lambda x: 0, boundary)</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出为什么 <code>return False</code> 会让 DeepXDE 在底层把全部边界条件无声清空？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong>DeepXDE 在采样边界点时，会遍历几何体边缘候选点，并将每个点喂给用户提供的谓词函数 <code>boundary(x, on_boundary)</code> 进行二次过滤。如果函数恒返回 <code>False</code>，框架就认为全域没有任何一个点符合边界条件！边界损失项被清空为 0，网络解彻底失去唯一定解约束，在常数簇空间中肆意漂移。</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>def boundary(x, on_boundary):
+    return on_boundary  # 严格对边界点放行 True</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>4 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  工业框架不是神仙魔法，而是将繁琐工程泥潭封装为透明的自洽管道！
+</div>
+
+<h3>4.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>为什么一根两端死死固定的晾衣绳，上面挂满均匀湿衣服后自然下垂的形状正好是一条初中抛物线？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>泊松方程、格林函数、变分法、二阶常微分、边界条件</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “把两端死死拴在木桩上的绳子，中间每厘米都挂着一样沉的重物。绳子内部的拉力必须时刻撑住下方重物的重力，这就迫使整根绳子每一小段都以完全恒定的速率向下弯曲。全宇宙中‘弯曲程度处处完全相等’的光滑曲线，正好就是初中数学里最标准的对称抛物线。”
+    </div>
+  </details>
+</div>
+
+<h3>4.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当右端重力负载 $f(x) 	o 0$ 时，泊松方程退化为拉普拉斯方程，一维解退化为一条笔直的刚性直线。</li>
+  <li><strong>极限二（趋近无穷大时）：</strong>当外载荷趋向无穷时，绳子张力趋向无穷，直至突破实际物理材料的屈服破坏极限。</li>
+  <li><strong>极限三（大挠度悬链线失效）：</strong>现实中当绳子下垂幅度极大时，水平投影长度不守恒，二阶线性小挠度假定破灭，真实解必须升级为非线性双曲余弦悬链线（Catenary）。</li>
+</ul>
+
+<h3>4.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>既然 DeepXDE 几行代码就能跑出漂亮图表，是不是只要会复制粘贴现成模板就能做世界级 SciML 科研了？</p>
+  <p><strong>【真实底层】：</strong>这是最具杀伤力的学术幻觉！工业库替你封装了自动微分和采样，但绝不可能替你解决<strong>多尺度刚性不平衡、边界层梯度奇异性、以及物理参数未知反演</strong>等深层物理数学难题。如果对底层计算图、Hessian 索引映射与损失权重分配毫无概念，一旦算例遇到非凸发散，调包侠会连错误日志都看不懂，彻底陷入盲目试参的玄学深渊。</p>
+</div>
+
+<h2>5 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>卷三工业开篇点火：DeepXDE 声明式泊松抛物线基准闭环！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>DEEPXDE-0001</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/pinn/p02_poisson_1d.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/pinn/p02_poisson_1d.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>DeepXDE 声明式网络预测曲线与严格对称抛物线解析基准解重叠对比图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证 DeepXDE 1.15.0 计算引擎点火成功，声明式五件套顺利建立物理闭环</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>全域最大绝对误差 $< 5.0 \times 10^{-3}$，3000 步训练残差达到 $10^{-5}$ 量级</strong></td></tr>
+</table>
+
+<h2>6 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：深入五件套的底层腹地！</span>
+  <p>我们已经成功点火了 DeepXDE 并征服了一维抛物线基准。但工业级的偏微分方程从来不是简单的一维问题！</p>
+  <p>下一章我们将进入 <strong>第 17 章 · DeepXDE 五件套 API 全景地图与 Hessian 陷阱</strong>！我们将系统梳理 <code>geometry</code>、<code>icbc</code>、<code>data</code>、<code>nn</code>、<code>Model</code> 五大模块的完整 API 拓扑；揭露在多维空间中调用 <code>dde.grad.hessian</code> 时误将非纯导当成二阶导的<strong>致命索引陷阱（$i=0, j=1$ 灾难）</strong>，掌握扎实的工业级防错肌肉记忆！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对 DeepXDE 声明式五件套与配点敏感性已建立清晰认知，请对我进行口头审查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="../01_CFDPython/0015-b5-three-curve-comparison.html">← 第 15 章 · B5 三线终极对决</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0002-api-map.html">第 17 章 · DeepXDE 五件套 API 全景地图 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷三：工业级开源计算框架 DeepXDE 深度实战</p>
+</footer>
+
+</div>
+</body>
+</html>

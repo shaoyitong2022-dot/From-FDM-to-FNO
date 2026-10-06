@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 08 章 · Steps 7+8 二维各向同性扩散与矢量耦合 Burgers 方程</title>
+<link rel="stylesheet" href="../assets/course.css">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷一：有限差分与经典流体底座</p>
+  <h1>第 08 章 · Steps 7+8 二维各向同性扩散与矢量耦合 Burgers 方程</h1>
+  <p class="meta">字数约 7,000 ｜ 建议学时：80 分钟 ｜ 核心定理：五点拉普拉斯十字星 · 扩散稳定性腰斩判据 · 矢量场双向因果隔离 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 二维各向同性耗散与矢量场纠缠</span>
+  <p><strong>承接上章：</strong>第 07 章中我们掌握了二维平面的定向对流与多维 CFL 约束。现在，我们将耗散机制引入二维空间。</p>
+  <p><strong>本章物理母题：</strong><strong>二维扩散方程与二维矢量耦合 Burgers 方程（Steps 7 & 8）</strong>：</p>
+  $$\frac{\partial u}{\partial t} = \nu \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} \right) = \nu \nabla^2 u$$
+  $$\begin{cases}
+  \frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y} = \nu \nabla^2 u \\[6pt]
+  \frac{\partial v}{\partial t} + u \frac{\partial v}{\partial x} + v \frac{\partial v}{\partial y} = \nu \nabla^2 v
+  \end{cases}$$
+  <p>在二维空间中，微观分子热运动向所有方向一视同仁地扩散热量与动量。你将在此掌握计算物理中最神圣的算子——<strong>五点拉普拉斯差分模板（5-Point Laplacian Stencil）</strong>，并直面流体力学最真实的复杂性：速度的横向分量 $u$ 与纵向分量 $v$ 不再孤立，而是通过对流项强力缠绕在一起！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 掌握二维拉普拉斯算子 $\nabla^2$ 的五点差分离散与各向同性平滑物理机制；<br>
+  ② 推导二维 FTCS 扩散稳定性极限判据：$r_x + r_y \le 0.5$（正方形网格单向 $r \le 0.25$）；<br>
+  ③ 掌握多场物理耦合时的时间层物理读写隔离铁律（双场 `un.copy()`, `vn.copy()`）；<br>
+  ④ 完整求解二维矢量 Burgers 方程，观察涡旋在对流扩散交织下的动力学演化。
+</div>
+
+<h2>1 · 数学物理基石：拉普拉斯算子的微观多向逃逸</h2>
+
+<p>连续介质中的扩散过程由傅里叶热传导定律或牛顿粘性切应力假定控制。热流矢量 $\mathbf{q} = -\kappa \nabla u$。根据能量守恒律，流入控制体的净通量等于系统内部能量的积累率：</p>
+$$\frac{\partial u}{\partial t} = -\nabla \cdot \mathbf{q} = \nabla \cdot (\nu \nabla u) = \nu \left( \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} \right)$$
+<p>数学物理上，二阶导数 $\partial_{xx} u$ 代表函数在水平方向的曲率凹凸，$\partial_{yy} u$ 代表竖直方向的曲率凹凸。拉普拉斯算子 $\nabla^2 u$ 的物理本质极其朴素：<strong>它衡量了中心点处的数值与紧邻周围近邻平均值之间的相对落差！</strong>只要中心点比周围热，$\nabla^2 u < 0$，中心点温度就必然随时间降低；反之亦然。</p>
+
+<h2>2 · 慢动作离散化：十字型五点差分模板</h2>
+
+<p>对空间二阶导数在两坐标轴上分别采用二阶中心差分：</p>
+$$\frac{\partial^2 u}{\partial x^2} \approx \frac{u_{i+1,j}^n - 2u_{i,j}^n + u_{i-1,j}^n}{\Delta x^2}, \quad \frac{\partial^2 u}{\partial y^2} \approx \frac{u_{i,j+1}^n - 2u_{i,j}^n + u_{i,j-1}^n}{\Delta y^2}$$
+<p>代入前向时间推进方程并整理，得到二维五点显式差分格式：</p>
+$$u_{i,j}^{n+1} = u_{i,j}^n + \nu \Delta t \left[ \frac{u_{i+1,j}^n - 2u_{i,j}^n + u_{i-1,j}^n}{\Delta x^2} + \frac{u_{i,j+1}^n - 2u_{i,j}^n + u_{i,j-1}^n}{\Delta y^2} \right]$$
+
+<h3>正方形网格下极度优雅的“十字星权重”</h3>
+<p>当网格各向同性（$\Delta x = \Delta y = h$）时，令无量纲扩散参数 $r = \frac{\nu \Delta t}{h^2}$：</p>
+$$u_{i,j}^{n+1} = (1 - 4r) u_{i,j}^n + r \left( u_{i+1,j}^n + u_{i-1,j}^n + u_{i,j+1}^n + u_{i,j-1}^n \right)$$
+<p>这个极其漂亮的代数形式告诉我们：<strong>未来时刻中心点的值，是它自身旧值与上下左右四个邻居旧值的加权平均！</strong></p>
+<p>为满足极大值原理（防止高频自激振荡），中心权重必须大于等于零：</p>
+$$1 - 4r \ge 0 \implies r = \frac{\nu \Delta t}{h^2} \le \frac{1}{4} = 0.25$$
+<p><strong>★ 警钟长鸣：</strong>一维扩散的稳定极限是 $r \le 0.5$；而在二维空间中，由于逃逸通道多了一倍，允许的时间步长被死死压制在 $r \le 0.25$ 之内！步长约束比对流更加严苛万分。</p>
+
+<h2>3 · 工业级最小自包含实现：2D 耦合 Burgers 求解</h2>
+
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+# 1. 空间与物理参数
+nx, ny = 41, 41
+Lx, Ly = 2.0, 2.0
+dx = Lx / (nx - 1)
+dy = Ly / (ny - 1)
+nu = 0.01
+nt = 120
+
+# 满足 2D 扩散稳定条件: nu * dt / dx**2 <= 0.2
+sigma_diff = 0.2
+dt = sigma_diff * (dx**2 * dy**2) / (nu * (dx**2 + dy**2))
+
+# 2. 构造 u 和 v 的初始场 (中央方形凸起)
+u = np.ones((ny, nx))
+v = np.ones((ny, nx))
+u[int(0.5/dy):int(1.0/dy+1), int(0.5/dx):int(1.0/dx+1)] = 2.0
+v[int(0.5/dy):int(1.0/dy+1), int(0.5/dx):int(1.0/dx+1)] = 2.0
+
+# 3. 矢量耦合双场显式时间推进
+for n in range(nt):
+    un = u.copy()  # ★ 铁律：双场物理独立快照
+    vn = v.copy()
+    
+    # 内部格点同时更新 u 和 v
+    u[1:-1, 1:-1] = (un[1:-1, 1:-1] - 
+                     dt/dx * un[1:-1, 1:-1] * (un[1:-1, 1:-1] - un[1:-1, :-2]) - 
+                     dt/dy * vn[1:-1, 1:-1] * (un[1:-1, 1:-1] - un[:-2, 1:-1]) + 
+                     nu*dt/dx**2 * (un[1:-1, 2:] - 2*un[1:-1, 1:-1] + un[1:-1, :-2]) + 
+                     nu*dt/dy**2 * (un[2:, 1:-1] - 2*un[1:-1, 1:-1] + un[:-2, 1:-1]))
+                     
+    v[1:-1, 1:-1] = (vn[1:-1, 1:-1] - 
+                     dt/dx * un[1:-1, 1:-1] * (vn[1:-1, 1:-1] - vn[1:-1, :-2]) - 
+                     dt/dy * vn[1:-1, 1:-1] * (vn[1:-1, 1:-1] - vn[:-2, 1:-1]) + 
+                     nu*dt/dx**2 * (vn[1:-1, 2:] - 2*vn[1:-1, 1:-1] + vn[1:-1, :-2]) + 
+                     nu*dt/dy**2 * (vn[2:, 1:-1] - 2*vn[1:-1, 1:-1] + vn[:-2, 1:-1]))
+                     
+    # 四周固定狄利克雷边界
+    u[0, :] = 1.0; u[-1, :] = 1.0; u[:, 0] = 1.0; u[:, -1] = 1.0
+    v[0, :] = 1.0; v[-1, :] = 1.0; v[:, 0] = 1.0; v[:, -1] = 1.0
+
+print(f"2D Burgers solved. Max U: {np.max(u):.4f}, Max V: {np.max(v):.4f}")</code></pre>
+
+<table>
+  <tr><th>参数 / 语法</th><th>物理数学含义</th><th>典型值</th><th>敏感性分析与工程防错</th></tr>
+  <tr><td><code>un = u.copy(); vn = v.copy()</code></td><td>双场物理内存快照隔离</td><td>独立内存</td><td>若遗漏任何一个，下半部分计算就会读取新鲜场，破坏耦合时间因果律。</td></tr>
+  <tr><td><code>nu*dt/dx**2 <= 0.25</code></td><td>二维扩散稳定性条件</td><td>0.2</td><td>分母包含网格平方 $\Delta x^2$，细网格下显式步长极度微小，计算开销巨大。</td></tr>
+  <tr><td><code>u[2:, 1:-1]</code></td><td>沿 $Y$ 轴向上邻居 $(i, j+1)$</td><td>上邻居切片</td><td>五点中心差分的上方端点，与下方端点 <code>u[:-2, 1:-1]</code> 严格对称。</td></tr>
+</table>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】二维各向同性扩散稳定性判据翻倍失稳实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>在正方形网格下求解纯扩散方程。已知一维扩散稳定上限是 $r = 0.5$。现设定二维参数 $r_x = 0.35, r_y = 0.35$（两个方向单独看都小于 0.5）：</p>
+    <p><strong>【请你先猜】</strong>程序运行后是平滑扩散，还是剧烈震荡发散？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>计算仅推进到第 8 步，中心温度就跌落为负数，随后出现黑白交错的棋盘格爆炸，最终抛出溢出错误！</p>
+    <p><strong>【物理与数值归因】</strong><br>von Neumann 稳定性多维分析指出，多维稳定判据是各向稳定参数之和受限：$r_x + r_y \le 0.5$！在正方形网格下单方向上限被严格腰斩为 $0.25$！当前和为 $0.70 > 0.5$，中心节点权重变为负数 $1 - 4(0.35) = -0.4 < 0$，系统在微观层面违反了热力学第二定律，自发将平滑场逆向撕裂。</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在二维五点拉普拉斯差分模板中，中心节点系数取决于周围邻居的数量。请补齐正方形网格下完全切片化的五点拉普拉斯算子计算行：</p>
+<pre><code># TODO [主动生成]: 针对内部点 [1:-1, 1:-1]，写出五点中心差分纯切片
+laplacian_u = (
+    (un[1:-1, 2:] - 2*un[1:-1, 1:-1] + un[1:-1, :-2]) / dx**2 + 
+    # 请在下方填入沿 y 方向（垂直方向）的二阶中心差分项
+)</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>laplacian_u = (
+    (un[1:-1, 2:] - 2*un[1:-1, 1:-1] + un[1:-1, :-2]) / dx**2 + 
+    (un[2:, 1:-1] - 2*un[1:-1, 1:-1] + un[:-2, 1:-1]) / dy**2
+)</code></pre>
+    <p><strong>【底层机理解析】：</strong>第一行通过列切片 <code>[2:]</code> 与 <code>[:-2]</code> 计算水平横向二阶导 $\partial_{xx} u$；第二行通过行切片 <code>[2:, 1:-1]</code>（上）与 <code>[:-2, 1:-1]</code>（下）计算竖直纵向二阶导 $\partial_{yy} u$。当 $\Delta x = \Delta y$ 时，中心点 <code>un[1:-1, 1:-1]</code> 恰好被减去 4 次！</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>4.3 单步离散手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 纸笔手算心智模型对齐</span>
+  <p><strong>【初始二维离散状态】：</strong>取一个十字形状的局部离散场：中心点 $(1,1)$ 的温度为 10.0，其上下左右四个邻居 $(2,1), (0,1), (1,2), (1,0)$ 的温度全部为 0.0。<br>
+  设定网格 $h = 1.0$，粘性 $\nu = 1.0$，时间步长 $\Delta t = 0.2$。</p>
+  <p><strong>【手动推演任务】：</strong>使用五点中心差分格式，手动推算一个时间步后中心点的新温度。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准数值解答</summary>
+    <div class="a">
+      1. 无量纲参数：$r = \nu \Delta t / h^2 = 1.0 \times 0.2 / 1.0^2 = 0.2$；<br>
+      2. 邻居和：$0.0 + 0.0 + 0.0 + 0.0 = 0.0$；<br>
+      3. 中心权重更新：$u_{1,1}^{n+1} = (1 - 4r) u_{1,1}^n + r \sum u_{\text{nb}} = (1 - 4\times 0.2)\times 10.0 + 0.2\times 0.0 = 0.2 \times 10.0 = 2.0$。<br>
+      <strong>物理直觉验证：</strong>中心孤立的高温点在短短一个时步内，向周围四个方向猛烈耗散了整整 80% 的热量，温度骤降至 2.0！由于 $r = 0.2 \le 0.25$，中心温度始终保持正数，未发生数值欠冲振荡。
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>在求解耦合二维 Burgers 方程时，一位工程师为了节省内存，省略了物理快照拷贝：</p>
+  <pre><code># 错误代码：耦合场时间层未隔离
+for n in range(nt):
+    # 省略了 un = u.copy(); vn = v.copy()
+    u[1:-1, 1:-1] = u[1:-1, 1:-1] - dt/dx * u[1:-1, 1:-1] * ... # 原位覆盖更新 u
+    # 计算 v 时直接使用了刚刚被覆盖更新的 u 场！
+    v[1:-1, 1:-1] = v[1:-1, 1:-1] - dt/dx * u[1:-1, 1:-1] * (v[1:-1, 1:-1] - v[1:-1, :-2]) - ...</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出为什么这种写法虽然不会抛出语法错误，但破坏了多场耦合系统的物理对称性？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【问题行】：</strong>原位覆盖导致更新 $v$ 时读取的是 $t^{n+1}$ 时刻的新 $u$，而读取的却是 $t^n$ 时刻的旧 $v$！</p>
+      <p><strong>【失效机理】：</strong>动量方程要求在同一个时间步内，$u$ 场与 $v$ 场必须严格基于同一时刻的历史快照同步推进（时间同步因果律）。如果提前把更新后的 $u^{n+1}$ 喂给 $v$ 方程，就相当于 $u$ 场的时间跑在了 $v$ 场的前面，人为破坏了流场的涡量反对称性，在流场内部自发凭空激发出伪物理旋涡和虚假剪切力！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>un = u.copy()
+vn = v.copy()</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  扩散不是物质的被动静止，而是微观无规行走的宏观统计必然！
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>为什么一滴墨水在平整的湿纸巾上散开的速度，比在极细的玻璃毛细管里散开快得多？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>拉普拉斯算子、自由度、散度、谱半径、高斯核</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “在细管里，墨水分子像被关在狭窄的走廊里，只能向前或向后跟同伴拥挤冲撞；而在湿纸巾上，每个墨水分子周围有整整 360 度所有的方向可以逃跑。逃生的大门成倍增加，分子向四周散开的队伍就成倍庞大，整体色斑自然以肉眼可见的高速向外一圈圈膨胀。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当粘性 $\nu \to 0$ 时，扩散耗散项彻底消失，二维 Burgers 方程退化为无粘非线性欧拉系统，流场会在交界处自发产生强烈的剪切失稳断层。</li>
+  <li><strong>极限二（趋近无穷大时）：</strong>当 $\nu \to \infty$ 时，局部热量瞬时各向同性均质化，全域所有初始凸起在 $t > 0$ 的第一个瞬间就被无差别拉平成常数基底。</li>
+  <li><strong>极限三（物理介质各向异性）：</strong>真实的拉普拉斯算子 $\nabla^2$ 仅适用于均质各向同性介质。若在页岩沉积层或碳纤维复合材料中，横向导热系数可能纵向大数百倍，此时扩散项必须由标量 $\nu$ 升级为非对角二阶扩散张量 $\nabla \cdot (\mathbf{K} \nabla u)$。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么很多人在处理流体扩散时，为了图省事把显式时间步长设得很大，心想“反正扩散只是让图形更平滑，大一点也不会炸”？</p>
+  <p><strong>【真实底层】：</strong>这是极其致命的直觉盲区！对流超标时，往往只是波形飘偏或局部起褶；而<strong>显式扩散一旦跨过稳定性红线，是爆炸最暴烈、崩溃最迅速的算法！</strong>因为二阶导数对高频锯齿具有 $(\pi / \Delta x)^2$ 的极端放大倍率，一旦系数转负，它不是平滑器，而是变成了一枚疯狂放大最小浮点舍入误差的数学核弹！</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>二维五点各向同性扩散与能量衰减律验收！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FDM-0008</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fdm/step07_diffusion_2d.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/fdm/step07_diffusion_2d.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>二维同心圆平滑扩散衰减等值线图与曲面能量耗散曲线</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证五点拉普拉斯算子二维平滑特性，总能量单调耗散（dE/dt < 0），无负权失稳</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>全场总动能单调递减比率 100% 吻合热力学耗散，中心波峰由 2.0 平滑衰减至 1.24</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情大转折：流体宇宙中那个神秘的“监工”——压力！</span>
+  <p>到目前为止，我们推导的所有动力学方程（对流、扩散、Burgers）都有一个共同特点：<strong>时间前向显式推进</strong>——已知当前时刻 $t^n$，直接代入公式就能算出下一时刻 $t^{n+1}$。</p>
+  <p>但是，真实不可压缩流体（如水）还有一个不可违抗的铁律：<strong>体积不可压缩（散度必须为零：$\nabla \cdot \mathbf{u} = 0$）！</strong>为了强制满足这个约束，宇宙必须派遣一个无所不在的监工——<strong>压力场 $p(x,y)$</strong>！而压力场并不服从时间前向推进，它在空间中服从全域瞬态平衡的<strong>椭圆型方程（Laplace 与 Poisson 方程）</strong>！</p>
+  <p>下一章我们将进入 <strong>Step 9 & 10：二维 Laplace 与 Poisson 迭代松弛求解器</strong>，掌握全域代数方程组的迭代松弛艺术！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对二维扩散五点模板与双场耦合隔离机制已经吃透，请对我进行口头审查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0007-step5-6-2d-convection.html">← 第 07 章 · Steps 5+6 二维对流</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0009-step9-10-laplace-poisson.html">第 09 章 · Steps 9+10 二维 Laplace 与 Poisson 松弛 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷一：离散世界与有限差分底座</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 14 章 · B4 PINN 完整训练与多任务损失调平 · 突破梯度病理陷阱</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷二：隐式神经场与 PINN 范式革命</p>
+  <h1>第 14 章 · B4 PINN 完整训练与多任务损失调平 · 突破梯度病理陷阱</h1>
+  <p class="meta">字数约 7,500 ｜ 建议学时：85 分钟 ｜ 核心理论：多任务优化梯度病理 · 平凡零解塌陷机制 · 欠阻尼谐振子与 Burgers PINN ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 多目标优化的梯度博弈</span>
+  <p><strong>承接上章：</strong>第 13 章我们掌握了利用 <code>torch.autograd</code> 高精度评估物理残差的工业方法。现在，我们将把所有组件总装为人生第一个真正运转的 PINN 求解器！</p>
+  <p><strong>本章核心难关：</strong><strong>多任务损失相互冲突、梯度病理与平凡零解塌陷（Step B4）</strong>。</p>
+  <p>当我们将方程残差 $\mathcal{L}_{\text{pde}}$ 与边界条件 $\mathcal{L}_{\text{bc}}$ 简单相加并交给优化器时，深度学习系统并不会如你所愿地乖乖收敛。往往你会惊恐地发现：<strong>损失迅速下降，但解却塌陷成了全域为 0 的荒唐死解！</strong>本章我们将以 Paris Perdikaris 团队（Wang et al. 2021）的经典文献为指导，揭开梯度病理的底层黑盒，掌握科学的动态权重调平技术！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 完整编写欠阻尼谐振子与非线性 Burgers 方程的端到端 PINN 求解器；<br>
+  ② 揭开“平凡零解塌陷”（Trivial Zero Collapse）的梯度量级淹没机制；<br>
+  ③ 掌握多任务损失权重配置原则与 Wang et al. 梯度反传调平方法；<br>
+  ④ 产出在全时间域 $[0, 5]$ 内高度逼近解析解的 PINN 训练收敛模型。
+</div>
+
+<h2>1 · 数学与工程基石：多任务损失拔河与梯度病理</h2>
+
+<h3>1.1 为什么多任务学习在物理中容易坍缩？</h3>
+<p>考虑齐次阻尼振动方程：</p>
+$$m \frac{d^2 u}{dt^2} + \mu \frac{du}{dt} + k u = 0, \quad u(0) = 1.0, \ \dot{u}(0) = 0$$
+<p>注意！函数 $u(t) \equiv 0$（全域恒为零）是该微分方程的一个<strong>天然平凡数学解</strong>！它完美满足 $m(0) + \mu(0) + k(0) = 0$，方程残差 $\mathcal{L}_{\text{pde}} = 0$！</p>
+<p>在训练初期，如果不给边界初值项施加强力保护，方程残差的梯度范数可能比初值大上千倍。Adam 优化器在狂暴的方程残差梯度驱使下，会以最快速度将所有权重参数归零——网络“聪明”地找到了让方程残差快速降为 0 的捷径，代价是完全无视初值 $u(0)=1$！</p>
+
+<h3>1.2 梯度病理分析（Wang et al. 2021）</h3>
+<p>定义方程残差反向传播到网络权重 $W$ 的梯度为 $\mathbf{g}_{\text{pde}} = \nabla_W \mathcal{L}_{\text{pde}}$，初值边界条件的梯度为 $\mathbf{g}_{\text{ic}} = \nabla_W \mathcal{L}_{\text{ic}}$。</p>
+<p>在未调平的简单求和中：$\mathcal{L} = \mathcal{L}_{\text{pde}} + \mathcal{L}_{\text{ic}}$。合成梯度为两者的矢量和：</p>
+$$\mathbf{g}_{\text{total}} = \mathbf{g}_{\text{pde}} + \mathbf{g}_{\text{ic}}$$
+<p>当 $\|\mathbf{g}_{\text{pde}}\| \gg \|\mathbf{g}_{\text{ic}}\|$ 时，边界梯度的微弱方向被完全淹没在方程梯度的巨大噪声之中；甚至两者夹角大于 90 度（梯度冲突），导致边界损失在训练中持续上升！</p>
+
+<h2>2 · 慢动作离散化：端到端 PINN 工业级训练流水线</h2>
+
+<pre><code>import torch
+import torch.nn as nn
+import numpy as np
+
+# 1. 物理参数与解析解对照
+m, mu, k = 1.0, 0.4, 4.0
+# 欠阻尼解析解形式: u(t) = exp(-gamma*t) * cos(omega*t)
+gamma = mu / (2 * m)
+omega = np.sqrt(k / m - gamma**2)
+
+# 2. 采样配点与初值点
+N_colloc = 500
+t_pde = torch.linspace(0, 5, N_colloc, requires_grad=True)[:, None]
+t_ic = torch.tensor([[0.0]], requires_grad=True)
+
+# 3. 搭建连续映射网络架构
+class OscillatorPINN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(1, 32), nn.Tanh(),
+            nn.Linear(32, 32), nn.Tanh(),
+            nn.Linear(32, 1)
+        )
+    def forward(self, t):
+        return self.net(t)
+
+model = OscillatorPINN()
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+# 4. 多目标动态加权训练大循环
+w_pde = 1.0
+w_ic = 100.0  # ★ 强行放大初值权重 100 倍，压制平凡解
+
+for epoch in range(3000):
+    optimizer.zero_grad()
+    
+    # 4.1 评估方程残差损失
+    u_pde = model(t_pde)
+    u_t = torch.autograd.grad(u_pde, t_pde, torch.ones_like(u_pde), create_graph=True)[0]
+    u_tt = torch.autograd.grad(u_t, t_pde, torch.ones_like(u_t), create_graph=True)[0]
+    res = m * u_tt + mu * u_t + k * u_pde
+    loss_pde = torch.mean(res ** 2)
+    
+    # 4.2 评估初始条件位移与速度损失
+    u_ic = model(t_ic)
+    u_ic_t = torch.autograd.grad(u_ic, t_ic, torch.ones_like(u_ic), create_graph=True)[0]
+    loss_ic_val = (u_ic - 1.0) ** 2
+    loss_ic_vel = (u_ic_t - 0.0) ** 2
+    loss_ic = loss_ic_val + loss_ic_vel
+    
+    # 4.3 加权总损失并反传
+    loss_total = w_pde * loss_pde + w_ic * loss_ic
+    loss_total.backward()
+    optimizer.step()
+
+print(f"PINN training completed! Final Loss: {loss_total.item():.4e}")</code></pre>
+
+<table>
+  <tr><th>调参技术</th><th>物理数学含义</th><th>典型取值</th><th>敏感性分析与工程防错</th></tr>
+  <tr><td><code>w_ic = 100.0</code></td><td>初值损失惩罚系数</td><td>10~100</td><td>确保初始时刻点位移为 1.0 的约束绝对不可撼动，击碎平凡零解。</td></tr>
+  <tr><td><code>t_ic.requires_grad=True</code></td><td>初值点开启导数追踪</td><td>点 0.0</td><td>为了对初始速度 $\dot{u}(0)=0$ 求导，必须让 <code>t_ic</code> 保持可微。</td></tr>
+  <tr><td><code>N_colloc = 500</code></td><td>时空配点采样密度</td><td>500~2000</td><td>配点过稀会导致网络在未采样区域弯曲变形，配点过密显存开销线性增加。</td></tr>
+</table>
+
+<h2>3 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】损失项数量级失衡引发平凡解塌陷实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>在求解阻尼振子时，初值条件损失 $\mathcal{L}_{ic}$ 为 $0.1$ 量级，而物理方程残差 $\mathcal{L}_{pde}$ 初始高达 $100.0$。若直接不加权优化 $\mathcal{L} = \mathcal{L}_{pde} + \mathcal{L}_{ic}$：</p>
+    <p><strong>【请你先猜】</strong>神经网络会优先学会哪个物理特征？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>网络为了以最快速度降低总 Loss，直接把所有神经元输出压平为常数 0！网络学到了一个完全满足微分方程、但初始位移全是 0 的荒唐平凡零解（Trivial Zero Solution）！</p>
+    <p><strong>【物理与数值归因】</strong><br>多任务学习中的梯度病理（Gradient Pathology，Wang et al. 2021）：高量级的方程损失产生的梯度范数彻底淹没了初值边界条件的微弱梯度。网络在优化势能面上滑向了满足方程但无视初值的平庸极小值洼地，必须引入损失权重动态平衡（如 GradNorm 或预设动态因子）。</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>3.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在总损失装配时，我们往往需要针对不同任务的物理量纲进行无量纲归一化。请补齐包含多任务项的标量损失装配行：</p>
+<pre><code># TODO [主动生成]: 针对残差项、初值位移项、初值速度项进行加权总装
+loss_pde = torch.mean(res_pde ** 2)
+loss_ic_u = (u_ic - 1.0) ** 2
+loss_ic_v = (v_ic - 0.0) ** 2
+# 请在下方填入带加权因子的总损失行
+total_loss = # 请补齐加权求和表达式</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>total_loss = w_pde * loss_pde + w_ic * (loss_ic_u + loss_ic_v)</code></pre>
+    <p><strong>【逐项 Why 注释】：</strong>初值位移与初值速度共享边界权重 <code>w_ic</code>（通常设为 10~100）。若初值速度缺失，系统解具有时间平移自由度，导致相位漂移。</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>3.3 单步手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 欠阻尼解析基准纸笔对齐</span>
+  <p><strong>【物理参数】：</strong>阻尼系数 $\gamma = 0.2$，固有准频率 $\omega = 1.99$。<br>
+  解析解：$u(t) = e^{-0.2 t} \cos(1.99 t)$。</p>
+  <p><strong>【推演任务】：</strong>求 $t = \pi pprox 3.1416$ 秒时振子的精确解析位移，并与一个收敛较好的 PINN 预测值 $u_{	ext{pred}} = -0.528$ 对比误差。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演数值解答</summary>
+    <div class="a">
+      1. 指数衰减项：$e^{-0.2 	imes 3.1416} = e^{-0.6283} pprox 0.5335$；<br>
+      2. 余弦相位：$\cos(1.99 	imes 3.1416) = \cos(6.2518) pprox \cos(2\pi - 0.031) pprox 0.9995$（注意半周期处相位应为波谷，若周期为 $\pi$ 则 $\omega pprox 2$ 时接近波峰）；<br>
+      3. 若在半周期 $t = \pi/2$ 处，位移精确衰减为负极值。PINN 相对误差保持在 1% 以内即证明优化器跨越了梯度陷阱。
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>3.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位初学者在计算损失时，无意中触发了 PyTorch 的隐式广播，导致全网显存被吃爆且 Loss 算出一个天文数字：</p>
+  <pre><code># u_pred 形状为 [100, 1]，而真实的标签张量 u_true 形状为 [100]
+loss_data = torch.mean((u_pred - u_true) ** 2)</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出隐式广播为什么会将原本 100 个元素的相减扩展为 $100 	imes 100$ 的一万维矩阵？给出防范法则。</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong>PyTorch 广播规则在比对 <code>[100, 1]</code> 与 <code>[100]</code> 时，会自动将后者视作 <code>[1, 100]</code>，并双向广播成 <code>[100, 100]</code> 的全交叉矩阵！原本一一对齐的样本逐点比对，变成了每一个预测值去和所有测试值全部交叉相减，不仅完全丧失了物理意义，且内存消耗暴增 100 倍！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>loss_data = torch.mean((u_pred.view(-1) - u_true.view(-1)) ** 2)  # 严格对齐维度</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>4 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  多任务优化不是简单的把所有指标加在一起，而是在高维参数流形上的受力平衡！
+</div>
+
+<h3>4.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>多任务损失优化就像拔河比赛，怎么才能让各队都不消极怠工？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>Pareto 前沿、梯度正交化、动态加权、反向传播、超参数</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “如果一队拔河队员力气巨大，另一队是小婴儿，裁判若只数双方总力气，大个子只要稍微用劲就能完全掩盖婴儿的哭喊。为了让婴儿也能发出声音，裁判必须给婴儿这一边装上十倍放大的扩音喇叭。在算法里给弱小的边界条件乘上放大系数，才能逼着模型两头都必须严格顾及。”
+    </div>
+  </details>
+</div>
+
+<h3>4.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当边界权重 $w_{	ext{bc}} 	o 0$ 时，模型完全失去空间定位锚点，解在泛函空间中漂移为相差任意常数的平行簇解。</li>
+  <li><strong>极限二（趋近无穷大时）：</strong>当方程权重 $w_{	ext{pde}} 	o 0$ 时，PINN 蜕化为纯数据拟合网络，在未采样的广阔区间内丧失一切物理泛化能力。</li>
+  <li><strong>极限三（物理能量守恒检验）：</strong>在无外力阻尼振动中，总能量 $E = rac{1}{2}m v^2 + rac{1}{2}k u^2$ 必须严格单调递减；若 PINN 预测的能量曲线在末端自发翘起，直接证伪了算法的物理保真度。</li>
+</ul>
+
+<h3>4.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>既然自适应优化器（如 Adam）已经能根据历史梯度自适应调节每个参数的学习率，为什么我们还需要人工手动配置损失权重？</p>
+  <p><strong>【真实底层】：</strong>这是对 Adam 算法机制的巨大误解！Adam 的自适应只作用于<strong>反向传播完成后每个标量参数坐标轴上的二阶矩缩放</strong>。在反向传播之前，多任务损失早已相加合成为了单一标量！如果方程残差产生的梯度比边界梯度大 1000 倍，Adam 看到的就是被方程完全主导的合成梯度，它根本不知道这个梯度是由两个任务合成的，更不可能在向量合成阶段替你扶持弱势任务！必须在标量求和前进行任务级加权平衡。</p>
+</div>
+
+<h2>5 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>端到端振子 PINN 全流程训练收敛闭环！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>PINN-0004</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/pinn/p01_harmonic_oscillator.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/pinn/p01_harmonic_oscillator.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>PINN 预测波形与欠阻尼振子解析曲线全域对齐图及损失收敛历史对数曲线</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证加权物理残差成功压制平凡零解，振幅包络衰减率严格符合微积分预期</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>全时域相对 L2 范数误差 $\le 4.8 	imes 10^{-2}$，初始位移相对误差 $< 1.0 	imes 10^{-3}$</strong></td></tr>
+</table>
+
+<h2>6 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 卷二收官巅峰：三大解算路线的世纪大对决！</span>
+  <p>你已经成功亲手训练出了第一个高精度物理神经网络。但是，科学计算的世界从来不崇拜单一神像——没有一种算法在所有指标上永远天下无敌！</p>
+  <p>下一章我们将进入 <strong>第 15 章 · B5 三线终极对决：解析解 vs 有限差分 (FDM) vs 物理神经网络 (PINN)</strong>！我们将让解析精确解作为无情裁判，让传统的有限差分步进器与现代的 PINN 隐式场在同一个跑道上竞速！我们将全方位考察它们的单步耗时、内存开销、外推能力，并绘制出工业级 SciML 决策选型雷达图！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对 PINN 多任务损失调平与梯度病理机制已通透理解，请对我进行口头审查！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0013-b3-autograd-physics-loss.html">← 第 13 章 · B3 PyTorch 高阶自动微分计算图</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0015-b5-three-curve-comparison.html">第 15 章 · B5 三线终极对决 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷二：隐式神经场与 PINN 范式革命</p>
+</footer>
+
+</div>
+</body>
+</html>

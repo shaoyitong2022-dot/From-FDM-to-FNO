@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>计算物理与科学机器学习全景教材 · 总览索引</title>
+<link rel="stylesheet" href="assets/course.css">
+<style>
+.track-section { margin-bottom: 2.2rem; }
+.track-title { font-size: 1.25rem; font-weight: 700; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 0.35rem; margin-top: 1.5rem; font-family: var(--sans); }
+.course-list { list-style: none; padding: 0; }
+.course-list li { padding: 0.85rem 1rem; border: 1px solid var(--line); border-radius: 6px; margin: 0.5rem 0; background: #fff; transition: border-color 0.2s; }
+.course-list li:hover { border-color: var(--accent); }
+.course-list a { font-weight: 700; text-decoration: none; color: var(--accent); font-family: var(--sans); }
+.course-list a:hover { text-decoration: underline; }
+.course-list .desc { display: block; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; font-family: var(--sans); }
+.badge { display:inline-block; font-size:0.72rem; padding:0.1rem 0.5rem; border-radius:999px; margin-left:0.4rem; vertical-align:middle; font-family:var(--sans); font-weight:600; }
+.b-v1 { background:#e1f5fe; color:#0288d1; }
+.b-v2 { background:#f3e5f5; color:#7b1fa2; }
+.b-v3 { background:#ede7f6; color:#512da8; }
+.b-v4 { background:#e8f5e9; color:#2e7d32; }
+.b-v5 { background:#fff3e0; color:#e65100; }
+.b-ref { background:#f5f5f5; color:#616161; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">海外计算物理 / AI4Science 顶尖名校直博基准教材</p>
+  <h1>计算物理与科学机器学习全景教材</h1>
+  <p class="meta">权威底座：Barba CFDPython · LeVeque (SIAM) · Gilbert Strang (MIT 18.086) · Lu Lu (DeepXDE) · Caltech (FNO) ｜ 全本地离线纯净运行（零 C 盘占用）</p>
+</header>
+
+<div class="box prep">
+  <span class="box-title">◆ 全书五卷认知宏图与两大物理脊梁</span>
+  <p>本教材专为志在登顶国际顶尖 AI4Science 研究阵地的学者量身打造，以两条贯穿全书的物理脊梁打通五大宏伟卷册：</p>
+  <ul>
+    <li><strong>Burgers 动力学脊椎（流动、非线性与激波）：</strong><br>
+    卷一 0006 (FDM FTCS+Upwind 离散) → 卷五 0003 (von Neumann 放大因子分析) → 卷三 0004 (全时空激波 PINN) → 卷四 0004/0005 (FNO 神经算子大合流)。</li>
+    <li><strong>Poisson 势场脊椎（守恒约束、极值原理与格林核）：</strong><br>
+    卷一 0009/0010 (五点差分松弛与压力投影) → 卷五 0001/0002 (离散刚度矩阵 $-K$ 与谱分布) → 卷三 0001/0005 (解析抛物线点火与 2D 双轨 PK) → 卷四 0001/0002 (格林函数连续积分核)。</li>
+  </ul>
+</div>
+
+<div class="box mentor">
+  <span class="box-title">◆ 现代化教学架构：自驱动工坊课件 × 专属 1-on-1 AI 导师</span>
+  <p><strong>【课件即自主工坊】：</strong>全书 28 章节均严格遵循工业级七联解剖标准，深度融入学习科学三大基石：</p>
+  <ul>
+    <li><strong>主动提取与刻意练习（Learning Opportunities）：</strong>每章包含 <em>POE 扰动预测折叠卡</em>、<em>20% 核心挖空半完成生成</em>、<em>单步纸笔离散手算推演</em>、以及 <em>真实致命 Bug 排错演练</em>，破除“以为看懂了就是掌握了”的认知陷阱。</li>
+    <li><strong>第一性原理概念穿透（Feynman Grilling）：</strong>每章设置 <em>禁黑话 3 句话口述挑战</em>、<em>参数 $\to 0$ 与 $\to \infty$ 极端极限三问</em>、以及 <em>货物崇拜盲从排查</em>，剥离复杂术语直击物理世界。</li>
+    <li><strong>原子化工程闭环（Writing Plans & Solvers）：</strong>每章直接链接经过单元测试的 <code>solvers/</code> 底层算法内核，提供终端一键复现指令与<em>【一张图 + 物理结论 + 实测基准误差数字】</em>交付标准。</li>
+  </ul>
+  <p><strong>【AI 导师专属职能】：</strong>HTML 课件负责提供最完整自洽的数理推导与实验环境；本会话中的 AI 导师专职负责<strong>课后答疑、推导草稿逐行核验、费曼口头严苛审问、以及随时触发 <code>/test</code> 闭卷考核出题与批改</strong>！</p>
+</div>
+
+<!-- Volume I -->
+<div class="track-section">
+  <div class="track-title">卷一：离散世界与有限差分底座（FDM Foundation · 共 10 章）</div>
+  <p class="meta">底座教材：Lorena A. Barba / CFDPython · Randall LeVeque / FDM (SIAM) ｜ 纯 NumPy 原生实现，拒绝任何黑盒</p>
+  <ul class="course-list">
+    <li><a href="01_CFDPython/0001-env-numpy-first-look.html">第 01 章 · 环境点火与物理场的离散表征</a><span class="badge b-v1">卷一</span><span class="desc">空间离散网格、切片向量化加速、un = u.copy() 时间层内存隔离铁律</span></li>
+    <li><a href="01_CFDPython/0002-step1-linear-convection.html">第 02 章 · Step 1 一维线性对流与迎风因果律</a><span class="badge b-v1">卷一</span><span class="desc">特征线理论、一阶迎风差分模板、修正方程与人工数值耗散解析</span></li>
+    <li><a href="01_CFDPython/0003-step2-nonlinear-convection.html">第 03 章 · Step 2 一维非线性对流与波形陡化</a><span class="badge b-v1">卷一</span><span class="desc">波速依赖于解本身的非线性自加速机制、激波前沿形成雏形</span></li>
+    <li><a href="01_CFDPython/0004-cfl-condition.html">第 04 章 · CFL 稳定性条件第一性原理</a><span class="badge b-v1">卷一</span><span class="desc">Courant 数物理内涵、数值依赖域必须包络物理因果光锥的充要条件</span></li>
+    <li><a href="01_CFDPython/0005-step3-diffusion.html">第 05 章 · Step 3 一维扩散方程与高斯平滑</a><span class="badge b-v1">卷一</span><span class="desc">二阶中心差分模板、离散扩散数 r ≤ 0.5 刚性步长上界极限</span></li>
+    <li><a href="01_CFDPython/0006-step4-burgers.html">第 06 章 · Step 4 一维粘性 Burgers 方程与 Cole-Hopf 基准</a><span class="badge b-v1">卷一</span><span class="desc">对流与扩散的世纪角力、Cole-Hopf 解析解推导、周期间隔圆环拓扑边界</span></li>
+    <li><a href="01_CFDPython/0007-step5-6-2d-convection.html">第 07 章 · Steps 5+6 二维对流与多维 CFL 约束</a><span class="badge b-v1">卷一</span><span class="desc">象限迎风模板、二维矩阵行列坐标对齐、多维稳定性判据 σ_x + σ_y ≤ 1</span></li>
+    <li><a href="01_CFDPython/0008-step7-8-2d-diffusion-burgers.html">第 08 章 · Steps 7+8 二维各向同性扩散与矢量 Burgers</a><span class="badge b-v1">卷一</span><span class="desc">五点拉普拉斯十字星算子、扩散稳定上限腰斩至 r ≤ 0.25、双场耦合时间隔离</span></li>
+    <li><a href="01_CFDPython/0009-step9-10-laplace-poisson.html">第 09 章 · Steps 9+10 二维 Laplace 与 Poisson 松弛求解器</a><span class="badge b-v1">卷一</span><span class="desc">强极值原理、虚拟时间松弛法、Jacobi 与 Gauss-Seidel 谱半径与收敛速度对决</span></li>
+    <li><a href="01_CFDPython/0010-step11-12-ns-cavity-channel.html">第 10 章 · Steps 11+12 顶盖驱动空腔流与不可压缩 NS 投影法</a><span class="badge b-v1">卷一 · 旗舰</span><span class="desc">Chorin 投影法、Helmholtz-Hodge 正交分解、压力泊松方程、Ghia 1982 基准对齐</span></li>
+  </ul>
+</div>
+
+<!-- Volume II -->
+<div class="track-section">
+  <div class="track-title">卷二：隐式神经场与 PINN 范式革命（Implicit Fields & PINN · 共 5 章）</div>
+  <p class="meta">前沿文献：Raissi et al. (JCP 2019) · Wang et al. (SISC 2021) ｜ 砸碎固定离散网格的百年枷锁</p>
+  <ul class="course-list">
+    <li><a href="01_CFDPython/0011-b1-pinn-concept.html">第 11 章 · B1 物理信息神经网络（PINN）范式觉醒</a><span class="badge b-v2">卷二</span><span class="desc">连续隐式神经场、配点物理残差损失、打破维度灾难与网格生成困境</span></li>
+    <li><a href="01_CFDPython/0012-b2-bare-nn-training.html">第 12 章 · B2 裸神经网络拟合训练与频域偏置</a><span class="badge b-v2">卷二</span><span class="desc">ReLU 导致二阶导瘫痪机理、Tanh/GELU 光滑性铁律、频域偏置（Spectral Bias）</span></li>
+    <li><a href="01_CFDPython/0013-b3-autograd-physics-loss.html">第 13 章 · B3 PyTorch 高阶自动微分计算图与物理残差装配</a><span class="badge b-v2">卷二</span><span class="desc">torch.autograd 底层剖析、create_graph=True 元计算图保持、机器精度求导</span></li>
+    <li><a href="01_CFDPython/0014-b4-pinn-full.html">第 14 章 · B4 PINN 完整训练与多任务损失调平</a><span class="badge b-v2">卷二</span><span class="desc">多任务优化梯度病理（Gradient Pathology）、平凡零解塌陷机制、阻尼振子训练</span></li>
+    <li><a href="01_CFDPython/0015-b5-three-curve-comparison.html">第 15 章 · B5 三线终极对决：解析解 vs FDM vs PINN</a><span class="badge b-v2">卷二 · 总结</span><span class="desc">三线同屏误差剖面、未见外推域（OOD）测试、算力能耗决策树与逆问题反演</span></li>
+  </ul>
+</div>
+
+<!-- Volume III -->
+<div class="track-section">
+  <div class="track-title">卷三：工业级开源计算框架 DeepXDE 深度实战（DeepXDE Ecosystem · 共 5 章）</div>
+  <p class="meta">底座开源教材：Lu Lu / DeepXDE (SIAM Review) ｜ 声明式物理 API 工业级实现</p>
+  <ul class="course-list">
+    <li><a href="02_DeepXDE/0001-setup-first-pinn.html">第 16 章 · DeepXDE 工业框架点火与 1D 抛物线基准</a><span class="badge b-v3">卷三</span><span class="desc">声明式五件套设计哲学、1D 泊松抛物线点火、配点采样密度敏感性分析</span></li>
+    <li><a href="02_DeepXDE/0002-api-map.html">第 17 章 · DeepXDE 五件套 API 全景地图与 Hessian 陷阱</a><span class="badge b-v3">卷三</span><span class="desc">五大模块完整拓扑、Hessian 索引规范（i=1,j=1 对角铁律）、两阶段二阶优化</span></li>
+    <li><a href="02_DeepXDE/0003-harmonic-oscillator-translation.html">第 18 章 · 阻尼振子手写 PyTorch 到 DeepXDE 对照迁移</a><span class="badge b-v3">卷三</span><span class="desc">手写代码逐行映射、PointSetBC 传感器稀疏数据融合、loss_weights 声明顺序</span></li>
+    <li><a href="02_DeepXDE/0004-burgers-main.html">第 19 章 · 时空 Burgers 方程与时空激波 PINN</a><span class="badge b-v3">卷三</span><span class="desc">GeometryXTime 时空连续统一流形、非线性激波梯度饥饿机制、L-BFGS 强力精修</span></li>
+    <li><a href="02_DeepXDE/0005-capstone-poisson-fdm-comparison.html">第 20 章 · Capstone 终极对决：2D Poisson × FDM 双轨跨界较量</a><span class="badge b-v3">卷三 · 收官</span><span class="desc">FDM 五点差分云图 vs DeepXDE 预测云图逐点绝对误差剖面横向大比对</span></li>
+  </ul>
+</div>
+
+<!-- Volume IV -->
+<div class="track-section">
+  <div class="track-title">卷四：神经算子与傅里叶神经算子前沿（Neural Operators & FNO · 共 5 章）</div>
+  <p class="meta">底座开源教材：Caltech / neuraloperator (Anima Anandkumar & Zongyi Li) ｜ 连续格林核算子学习</p>
+  <ul class="course-list">
+    <li><a href="03_FNO/0001-paradigm-shift-operator-learning.html">第 21 章 · 算子学习范式革命：从解一个方程到学一族算子</a><span class="badge b-v4">卷四</span><span class="desc">巴拿赫空间算子映射、格林函数连续核积分、网格无关性（Mesh-Independence）</span></li>
+    <li><a href="03_FNO/0002-architecture-anatomy.html">第 22 章 · FNO 核心架构解剖：Lifting P → Fourier Block → Projection Q</a><span class="badge b-v4">卷四</span><span class="desc">通道升维映射、频域非线性谐波混合（Frequency Mixing）、空间局域残差旁路 W</span></li>
+    <li><a href="03_FNO/0003-spectral-conv-from-scratch.html">第 23 章 · 纯手写 1D 谱卷积层（SpectralConv1d）</a><span class="badge b-v4">卷四</span><span class="desc">纯 PyTorch 实现 rfft + 复数模态乘法 + irfft、截断模态引发的吉布斯震荡</span></li>
+    <li><a href="03_FNO/0004-official-library-hands-on.html">第 24 章 · 工业级官方库 neuraloperator 实操与零样本超分辨率</a><span class="badge b-v4">卷四</span><span class="desc">TFNO 张量分解压缩模型、Sobolev H1 梯度损失函数、64 训练 256 跨分辨率推理</span></li>
+    <li><a href="03_FNO/0005-capstone-fdm-data-super-resolution.html">第 25 章 · Capstone 终极合流：FDM 产数据 × FNO 学算子大会师</a><span class="badge b-v4">卷四 · 巅峰</span><span class="desc">符号自适应迎风通量生成器、数据契约校验、经典差分与前沿算子闭环会师</span></li>
+  </ul>
+</div>
+
+<!-- Volume V -->
+<div class="track-section">
+  <div class="track-title">卷五：麻省理工学院 MIT 18.086 计算科学数学精要（MIT Foundations · 共 3 章）</div>
+  <p class="meta">权威导师：Gilbert Strang / MIT 18.086 (Mathematical Methods for Engineers II)</p>
+  <ul class="course-list">
+    <li><a href="04_MIT18086_理论导学/0001-l01-four-pdes.html">第 26 章 · Gilbert Strang 四大基本偏微分方程与数值世界观</a><span class="badge b-v5">卷五</span><span class="desc">椭圆/抛物/双曲/波动四分流形、特征线光锥与信息传播速度、粘性趋 0 相变</span></li>
+    <li><a href="04_MIT18086_理论导学/0002-l02-finite-difference-matrices.html">第 27 章 · 差分矩阵 -K、特征值谱分布与显式稳定界</a><span class="badge b-v5">卷五</span><span class="desc">离散刚度矩阵 -K、特征值极限 λ_max → 4、与物理扩散稳定界 r ≤ 0.5 的完美对偶</span></li>
+    <li><a href="04_MIT18086_理论导学/0003-l03-cfl-and-von-neumann.html">第 28 章 · von Neumann 稳定性分析与全书大收官</a><span class="badge b-v5">卷五 · 终章</span><span class="desc">复平面单位圆放大因子、FTCS 对流自杀格式严格证明、全五卷认知大宗师闭环</span></li>
+  </ul>
+</div>
+
+<!-- Reference Section -->
+<div class="track-section">
+  <div class="track-title">共享工具箱与直觉补给线（Reference & Toolkits）</div>
+  <ul class="course-list">
+    <li><a href="reference/python-toolkit.html">Python 科学计算工具箱</a><span class="badge b-ref">参考</span><span class="desc">copy() 内存陷阱、切片向量化、负索引、SymPy 符号推导与报错速查</span></li>
+    <li><a href="reference/fluid-intuition.html">流体直觉与物理图像</a><span class="badge b-ref">参考</span><span class="desc">物质导数、散度与无源性、压力泊松方程、边界层与雷诺数微观本质</span></li>
+    <li><a href="reference/glossary.html">中英对照双语术语表</a><span class="badge b-ref">参考</span><span class="desc">全书专业词条、直博面试与顶级学术期刊文献查阅必备</span></li>
+    <li><a href="reference/learning-path.html">渐进学习路线图（全景 Stage 0–5）</a><span class="badge b-ref">参考</span><span class="desc">各阶段避坑指南、直博过关标准与一手权威学术书单入口</span></li>
+    <li><a href="reference/burgers_ic_explained.html">Burgers 初值与解析推导详解</a><span class="badge b-ref">参考</span><span class="desc">Cole-Hopf 变换数学背景与周期高斯包解析展开细节</span></li>
+  </ul>
+</div>
+
+<footer class="lesson-foot">
+  <p>纯本地离线部署 · 位于 <code>D:\codex project\规划\lesson new</code> · 2026-10-03 构建 · 28 章节全套教材</p>
+</footer>
+</div>
+</body>
+</html>

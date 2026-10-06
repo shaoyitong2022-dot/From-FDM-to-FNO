@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From FDM to FNO: Computational Physics & AI4Science PDE Solver Kernel Suite</title>
+<link rel="stylesheet" href="courseware/assets/course.css">
+<style>
+:root {
+  --primary: #0f172a;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --card-bg: #ffffff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f8fafc;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.hero {
+  background: var(--bg-gradient);
+  color: #ffffff;
+  padding: 4.5rem 2rem 3.5rem;
+  text-align: center;
+  border-bottom: 1px solid #334155;
+}
+
+.hero h1 {
+  font-size: 2.75rem;
+  font-weight: 800;
+  margin: 0 0 1rem;
+  letter-spacing: -0.025em;
+  background: linear-gradient(to right, #60a5fa, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero p.tagline {
+  font-size: 1.25rem;
+  max-width: 860px;
+  margin: 0 auto 1.75rem;
+  color: #cbd5e1;
+  font-weight: 400;
+}
+
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.hero-badges img {
+  height: 24px;
+}
+
+.cta-group {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.cta-primary {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+}
+
+.cta-primary:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.cta-secondary {
+  background: #334155;
+  color: #f8fafc;
+  border: 1px solid #475569;
+}
+
+.cta-secondary:hover {
+  background: #475569;
+  transform: translateY(-1px);
+}
+
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.feature-card {
+  background: var(--card-bg);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.feature-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+}
+
+.feature-card h3 {
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.feature-card p {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
+.card-link {
+  display: inline-block;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.card-link:hover {
+  text-decoration: underline;
+}
+
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 3rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.stat-item h4 {
+  font-size: 2rem;
+  margin: 0;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.stat-item p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2rem; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-badges">
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License MIT">
+    <img src="https://img.shields.io/badge/Benchmarks-20%2F20%20PASS%20(100%25)-brightgreen.svg" alt="Benchmarks 20/20 PASS">
+    <img src="https://img.shields.io/badge/Python-3.10%2B-blue.svg" alt="Python 3.10+">
+    <img src="https://img.shields.io/badge/PyTorch-2.5%2B-ee4c2c.svg" alt="PyTorch 2.5+">
+    <img src="https://img.shields.io/badge/DeepXDE-1.15%2B-green.svg" alt="DeepXDE 1.15+">
+    <img src="https://img.shields.io/badge/NeuralOperator-2.0%2B-orange.svg" alt="NeuralOperator 2.0+">
+  </div>
+  <h1>From FDM to FNO</h1>
+  <p class="tagline">
+    面向计算物理与 AI4Science 顶尖名校直博/高阶研发的 PDE 算法内核与全景教程体系<br>
+    从 20 行手写有限差分到傅里叶神经算子（FNO），全链路闭环可复现基准套件
+  </p>
+  <div class="cta-group">
+    <a href="courseware/index.html" class="cta-btn cta-primary">📖 开启在线全景教材 (28章)</a>
+    <a href="courseware/tablet/index.html" class="cta-btn cta-secondary">📱 单文件离线阅读 (Tablet)</a>
+    <a href="https://github.com" class="cta-btn cta-secondary">⭐ GitHub 仓库源码</a>
+  </div>
+</header>
+
+<main class="container">
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <h4>20 / 20</h4>
+      <p>基准测试通过率 (100%)</p>
+    </div>
+    <div class="stat-item">
+      <h4>5 卷 · 28 课</h4>
+      <p>全景核心教程讲义</p>
+    </div>
+    <div class="stat-item">
+      <h4>34 篇</h4>
+      <p>零 CDN 纯净离线课件</p>
+    </div>
+    <div class="stat-item">
+      <h4>0.00%</h4>
+      <p>黑盒依赖 · 原生实现</p>
+    </div>
+  </div>
+
+  <h2 style="font-size: 1.75rem; color: #0f172a; margin-bottom: 0.5rem;">📚 核心架构与阅读入口</h2>
+  <p style="color: #64748b; margin-top: 0;">严格对标顶会与顶级文献（Barba CFDPython · Strang MIT 18.086 · Lu Lu DeepXDE · Caltech FNO）</p>
+
+  <div class="grid-3">
+    <div class="feature-card">
+      <h3>🌊 卷一：离散世界与有限差分底座</h3>
+      <p>基于 Lorena Barba CFDPython 与 LeVeque SIAM 经典教材。从 1D 线性对流、CFL 条件、黏性 Burgers 到 2D 顶盖驱动方腔流不可压缩 NS 方程。</p>
+      <a href="courseware/01_CFDPython/0001-env-numpy-first-look.html" class="card-link">进入卷一 (10章) →</a>
+    </div>
+
+    <div class="feature-card">
+      <h3>🧠 卷二：隐式神经场与 PINN 范式</h3>
+      <p>连续神经场、二阶自动求导图计算、多任务损失梯度病理。从阻尼振子到时空激波，打破固定空间离散网格的传统束缚。</p>
+      <a href="courseware/01_CFDPython/0011-b1-pinn-concept.html" class="card-link">进入卷二 (5章) →</a>
+    </div>
+
+    <div class="feature-card">
+      <h3>⚙️ 卷三：工业级开源框架 DeepXDE</h3>
+      <p>基于 Lu Lu (SIAM Review) 声明式物理 API 工业级实现。涵盖 1D 泊松点火、Hessian 索引规范、时空激波拟合与 FDM 双轨跨界较量。</p>
+      <a href="courseware/02_DeepXDE/0001-setup-first-pinn.html" class="card-link">进入卷三 (5章) →</a>
+    </div>
+
+    <div class="feature-card">
+      <h3>⚡ 卷四：神经算子与傅里叶神经算子 (FNO)</h3>
+      <p>Caltech neuraloperator 官方标准。从解单个偏微分方程跨越至学习整族无限维算子解流形，纯手写 1D 谱卷积到零样本超分辨率泛化。</p>
+      <a href="courseware/03_FNO/0001-paradigm-shift-operator-learning.html" class="card-link">进入卷四 (5章) →</a>
+    </div>
+
+    <div class="feature-card">
+      <h3>📐 卷五：MIT 18.086 计算科学数学精要</h3>
+      <p>Gilbert Strang 计算科学精要。四大基础方程分类、离散差分矩阵 -K 特征值谱分布、von Neumann 稳定性复数放大因子严密证明。</p>
+      <a href="courseware/04_MIT18086_理论导学/0001-l01-four-pdes.html" class="card-link">进入卷五 (3章) →</a>
+    </div>
+
+    <div class="feature-card">
+      <h3>🛠️ 共享工具箱与直觉参考</h3>
+      <p>包含 NumPy/SymPy 科学计算工具箱、流体直觉与物理图像、中英双语专业术语表以及全景 Stage 0-5 渐进学习路线图。</p>
+      <a href="courseware/reference/index.html" class="card-link">查阅参考中心 →</a>
+    </div>
+  </div>
+
+</main>
+
+<footer style="text-align: center; padding: 2.5rem 1rem; color: #94a3b8; font-size: 0.875rem; border-top: 1px solid #e2e8f0; background: #ffffff;">
+  <p>From FDM to FNO Suite · 遵循 MIT 与 CC-BY-4.0 开源协议 · 针对海外顶尖名校直博及工业级科研构建</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0003 · Step 2 · 一维非线性对流与波形自陡化激波雏形</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">Volume I · Chapter 03 / 经典离散底座</p>
+  <h1>0003 · Step 2 · 一维非线性对流与波形自陡化激波雏形</h1>
+  <p class="meta">预计 35 分钟 ｜ 核心：波速自驱动 · 特征线交叉 · 激波前哨陡化 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 从线性平移跨入非线性陡化</span>
+  <p><strong>承接上章：</strong>在 Step 1 中，波速 $c$ 是一个全局常数，所有质点以恒速平移，形状不变（仅受数值耗散磨圆）。</p>
+  <p><strong>本章物理母题：</strong>迈出流体力学真正残酷且精彩的第一步——<strong>无粘 Burgers 方程（Inviscid Burgers Equation）</strong>：</p>
+  $$\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} = 0$$
+  <p>波速不再是外部给定的常数，而是<strong>流体当地的速度 $u$ 本身</strong>！波峰（$u=2$）以两倍于平地（$u=1$）的速度向前狂飙。高处追赶低处，波前被不断挤压压缩，引发<strong>波形自陡化（Wave Steepening）</strong>，激波（Shock Wave）的胚胎由此诞生！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 深刻理解非线性对流项 $u \partial_x u$ 的物理机制与特征线交叉理论；<br>
+  ② 掌握局域速度自适应迎风差分的离散构建；<br>
+  ③ 实测波形不对称陡化：前缘斜率从 1.69 飙升至 4.26，捕获激波断裂的前哨。
+</div>
+
+<h2>1 · 物理机制：波峰追逐波谷与激波断裂时间</h2>
+
+<p>方程 $\partial_t u + u \partial_x u = 0$ 的特征线斜率为当地流速：</p>
+
+$$\frac{dx}{dt} = u(x, t)$$
+
+<p>在 $(x, t)$ 时空平面上，特征线不再是一簇平行的直线！在波峰处（$u$ 较大），特征线向右倾斜的角度更大；在低谷处（$u$ 较小），特征线较为陡直。后方的快特征线必然在有限时间内<strong>追赶并跨越前方的慢特征线</strong>！</p>
+<p>当特征线相交时，同一个物理点 $x$ 处将对应多重可能的速度值，物理场出现多值性！在数学上，波前斜率趋于无穷大：</p>
+
+$$t_{\text{shock}} = -\frac{1}{\min \left( \frac{\partial u_0}{\partial x} \right)}$$
+
+<p>这正是激波断裂时刻（Shock Breaking Time）。经典强解在此处彻底终结，微积分意义上的空间导数 $\partial_x u \to -\infty$！</p>
+
+<h2>2 · 离散化构建：符号自适应迎风格式</h2>
+
+<p>沿用时间前向差分，将非线性对流项中的波速取为当前格点的值 $u_i^n$：</p>
+
+$$\frac{u_i^{n+1} - u_i^n}{\Delta t} + u_i^n \frac{u_i^n - u_{i-1}^n}{\Delta x} = 0 \quad (u_i^n \ge 0)$$
+
+<p>整理得更新式：</p>
+
+$$u_i^{n+1} = u_i^n - u_i^n \frac{\Delta t}{\Delta x} (u_i^n - u_{i-1}^n)$$
+
+<p>注意：此时 Courant 数变成了局域变量 $\sigma_i = u_i^n \frac{\Delta t}{\Delta x}$。全场的 CFL 稳定性不再由单一全局常数保证，而是取决于<strong>全场最大速度点</strong>：</p>
+
+$$\sigma_{\max} = \max_{i} |u_i^n| \cdot \frac{\Delta t}{\Delta x} \le 1.0$$
+
+<h2>3 · 工业级参考实现</h2>
+
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+def solve_nonlinear_convection(nx=41, dt=0.01, nt=40):
+    dx = 2.0 / (nx - 1)
+    x = np.linspace(0, 2.0, nx)
+    
+    # 初始方帽
+    u = np.ones(nx)
+    u[int(0.5 / dx) : int(1.0 / dx + 1)] = 2.0
+    
+    # 动态监测最高 CFL
+    max_cfl = 2.0 * dt / dx
+    assert max_cfl <= 1.0, f"CFL 超标! max_cfl={max_cfl:.2f}"
+    
+    for n in range(nt):
+        un = u.copy()
+        # 非线性迎风更新: 速度为 un[1:]
+        u[1:] = un[1:] - un[1:] * dt / dx * (un[1:] - un[:-1])
+        u[0] = 1.0
+        
+    return x, u
+
+if __name__ == '__main__':
+    x, u = solve_nonlinear_convection()
+    plt.plot(x, u, 'r-o', label='Nonlinear Convection')
+    plt.title('Step 2: Wave Steepening')
+    plt.xlabel('x [m]'); plt.ylabel('u [m/s]')
+    plt.grid(True); plt.legend()
+    plt.show()</code></pre>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊</h2>
+
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】波前与波背的不对称演化实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>初始方帽在 $[0.5, 1.0]$ 区间内高度为 2.0，两侧平地高度为 1.0。推进 40 个时间步后：</p>
+    <p><strong>【请你先猜】</strong>方帽的前沿（迎风面）和后沿（背风面）会保持对称平移吗？哪一边的坡度会变得更陡？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>波形发生剧烈不对称倾斜！前沿坡度从初始 1.69 飙升到 <strong>4.26</strong>，形成几乎直立的陡峭立面；而背风面被拉扯成平缓长斜坡！</p>
+    <p><strong>【物理与数值归因】</strong><br>帽顶 $u=2$ 的波速比前方 $u=1$ 快整整一倍，后方的高能质点高速追赶前方的低速质点，导致迎风面物质剧烈堆叠陡化；而背风面高质点逐渐远离后方低质点，形成膨胀稀疏波（Rarefaction Wave）。</p>
+  </div>
+</details>
+
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>当速度场出现负速度（如 $u < 0$）时，天真的向后迎风差分将瞬间引发下风爆炸。请写出符号自适应迎风差分的单行矢量化代码：</p>
+<pre><code># u 可能同时包含正负值
+du_b = (u - np.roll(u, 1)) / dx    # 向后差分
+du_f = (np.roll(u, -1) - u) / dx   # 向前差分
+# TODO [主动生成]: 针对 u > 0 选向后，u < 0 选向前
+adv_flux = # 请在此处写出符号自适应通量加权</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>adv_flux = np.maximum(u, 0) * du_b + np.minimum(u, 0) * du_f</code></pre>
+    <p><strong>【底层机理解析】：</strong>利用 <code>np.maximum</code> 滤出正速度分量并绑定向后差分，利用 <code>np.minimum</code> 滤出负速度分量并绑定向前差分。无论局部流向如何逆转，数学上保证局部数值耗散恒为正，杜绝发散！</p>
+  </div>
+</details>
+
+<h3>4.3 单步离散手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 纸笔手算心智模型对齐</span>
+  <p><strong>【初始离散状态】：</strong>三点局部速度 $u_0=1.0, u_1=3.0, u_2=1.0$，参数 $\Delta x=1.0, \Delta t=0.1$。</p>
+  <p><strong>【手动推演任务】：</strong>计算下一步 $u_1^1$ 与 $u_2^1$，观察陡化在微观数字上的爆发。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准数值解答</summary>
+    <div class="a">
+      点 1：$u_1^1 = 3.0 - 3.0 	imes rac{0.1}{1.0} 	imes (3.0 - 1.0) = 3.0 - 0.6 = 2.4$；<br>
+      点 2：$u_2^1 = 1.0 - 1.0 	imes rac{0.1}{1.0} 	imes (1.0 - 3.0) = 1.0 + 0.2 = 1.2$；<br>
+      <strong>数据解读：</strong>原本点 2 与点 1 之间落差为 2.0，经过一步推进，点 1 将物质强力倾泻至点 2，点 2 迅速被顶高为 1.2，波形前缘在极短距离内被疯狂推高挤紧！
+    </div>
+  </details>
+</div>
+
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>为了让陡化更明显，某学生将方帽高度从 2.0 提高到 4.0，未修改其它参数，结果程序直接报 <code>FloatingPointError: overflow</code>：</p>
+  <pre><code>nx = 41; dx = 2.0 / (nx - 1); dt = 0.025
+u = np.ones(nx)
+u[int(0.5/dx) : int(1.0/dx+1)] = 4.0  # 加大波高至 4.0
+# 推进 10 步后数组出现 -inf 和 nan</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出该代码触犯了什么红线？为什么提高初值幅度会破坏求解器稳定性？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【问题行】：</strong>未随着波峰高度等比例调小 <code>dt</code>。</p>
+      <p><strong>【失效机理】：</strong>非线性对流的 Courant 数正比于最大波速 $\sigma_{\max} = u_{\max} \Delta t / \Delta x$。当 $u_{\max}=2.0$ 时，$\sigma = 2 	imes 0.025 / 0.05 = 1.0$ 恰好压在临界线；当改用 $u_{\max}=4.0$ 时，$\sigma = 4 	imes 0.025 / 0.05 = 2.0 > 1.0$！CFL 严重破防，程序必然自杀爆炸！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>dt = 0.5 * dx / np.max(u)  # 严格限制 Courant 数 <= 0.5</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  <p>“首要原则是决不要欺骗自己，而你自己正是最容易被欺骗的人。”拒绝用高深术语解释术语，用物理世界看得见摸得着的动作直击本质！</p>
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>为什么高速公路上一旦快车追上慢车，就必然会形成堵车的死结？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>特征线相交、激波条件、弱解、黎曼不变量、梯度发散</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “如果一条单车道公路上，后方是一群开着两百码的跑车，前方是一辆慢吞吞六十码的拖拉机。因为无法变道超车，跑车群只能在追上的一瞬间被逼紧急刹车挤成一团。在极短的距离内，车速断崖式暴跌，前后车距几乎缩减为零，这就硬生生堆出了一面谁也冲不过去的高密度堵车墙壁。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（速度振幅差 $\Delta u \to 0$ 时）：</strong>全场速度趋向均匀常数，非线性项 $u \partial_x u$ 蜕化为准线性常速对流 $c \partial_x u$，波形保持刚体平移不再发生任何陡化。</li>
+  <li><strong>极限二（时间演化 $t \to t_{\text{shock}}$ 时）：</strong>迎风坡切线斜率趋向负无穷，物理场在此产生跳跃间断，经典连续可微偏微分方程彻底失效，必须引入积分守恒弱解（Weak Solution）。</li>
+  <li><strong>极限三（量纲与现实反例）：</strong>现实世界中空气的分子粘性虽然极小（约 $1.5 	imes 10^{-5} 	ext{ m}^2/	ext{s}$），但绝不为零！当激波厚度缩小到微米量级时，粘性内聚耗散急剧暴增，强行阻止斜率变为无限大，将激波锁定为具有有限极薄厚度的光滑过渡层。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>既然波形变陡是物理真实，为什么我们纯无粘对流代码在长时间运行后，前沿会出现奇怪的高频锯齿并最终炸算？</p>
+  <p><strong>【真实底层】：</strong>因为计算机网格间距 $\Delta x$ 是有限的！当真实物理波陡化到厚度小于 $2\Delta x$ 时，离散网格便无法采样这个跨网格跃变，产生严重的混叠失真（Aliasing Error）。无粘方程缺少耗散机制，高频能量无法排出，最终反噬整个数值系统。这直接催生了 Step 4：我们必须引入物理粘性扩散项来拯救求解器！</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>数值算法研发以<strong>可运行代码、确定性基准、实测误差数字</strong>为准绳！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FDM-0003</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fdm/step02_nonlinear_convection.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/fdm/step02_nonlinear_convection.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>波形迎风坡自陡化剖面演化图（斜率明显高于背风面）</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证自流速导致的波前自陡化动力学机制，实测前缘坡度放大与激波雏形</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>前沿斜率由初始 1.69 显著放大至 4.26，验证激波雏形形成且求解器保持 CFL 稳定</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：探寻网格的“宇宙速度极限”</span>
+  <p>在 Step 1 和 Step 2 中，我们两次遭遇了步长设置不当导致的恐怖核爆。在非线性对流中，甚至只是调大初值幅度就会引发生死危机。</p>
+  <p>究竟是什么在暗中主宰着数值模拟的生与死？下一章我们将暂停添加新的物理项，专门开辟专章深入研究数值计算史上最著名、最重要的稳定性法则——<strong>CFL 条件（Courant-Friedrichs-Lewy Condition）</strong>！我们将从物理特征线与数值依赖域的第一性原理出发，推导网格允许的终极速度极限！</p>
+  <p><strong>【导师对接提示】：</strong>学完本章后，可在对话框向导师发送：“<em>导师，我已完成 Step 2 陡化实验，前沿斜率实测 4.26，请对我进行非线性特征线审问！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0002-step1-linear-convection.html">← 0002 Step 1 线性对流</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0004-cfl-condition.html">0004 CFL 稳定性条件 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷一：离散世界与有限差分底座</p>
+</footer>
+
+</div>
+</body>
+</html>

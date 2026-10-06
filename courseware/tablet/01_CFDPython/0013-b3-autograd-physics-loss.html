@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 13 章 · B3 PyTorch 高阶自动微分（Autograd）计算图与物理残差装配</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷二：隐式神经场与 PINN 范式革命</p>
+  <h1>第 13 章 · B3 PyTorch 高阶自动微分（Autograd）计算图与物理残差装配</h1>
+  <p class="meta">字数约 7,000 ｜ 建议学时：80 分钟 ｜ 核心理论：动态计算图反传 · create_graph=True 元微分 · 机器精度微商 vs 差分截断 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 机器精度的微积分引擎</span>
+  <p><strong>承接上章：</strong>第 12 章我们锁定了以 Tanh 为核心的光滑神经网络骨架。但要让网络服从偏微分方程，核心在于评估导数——如速度梯度 $\partial_x u$、粘性二阶扩散 $\partial_{xx} u$、加速度 $\partial_{tt} u$。</p>
+  <p><strong>本章技术基石：</strong><strong>PyTorch 动态计算图（Dynamic Computational Graph）与高阶反向自动微分（Autograd，Step B3）</strong>。</p>
+  <p>很多人误以为计算机求导只有两种方式：要么人手在草稿纸上算好公式敲进代码，要么用有限差分算 $(u(x+\Delta x)-u(x))/\Delta x$。本章我们将打破这个狭隘认知，掌握现代科学智能的最强引擎——<strong>后向模式自动微分（Reverse-mode Automatic Differentiation）</strong>！我们将严密解析 <code>create_graph=True</code> 保持元计算图的底层机理，杜绝 <code>RuntimeError</code> 运行时崩溃！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 深刻理解符号微分、数值差分与自动微分（Autograd）的三足鼎立机制；<br>
+  ② 掌握 <code>torch.autograd.grad</code> 高阶微分调用规范，解析保留计算图 <code>create_graph=True</code> 的底层链式法则；<br>
+  ③ 实测自动微分与解析导数的绝对误差，见证其达到机器浮点精度极限（$< 10^{-16}$）的惊人震撼；<br>
+  ④ 熟练装配阻尼谐振子与 Burgers 方程的物理残差算子张量。
+</div>
+
+<h2>1 · 数学与工程基石：自动微分的三大本质区别</h2>
+
+<table>
+  <tr><th>求导方式</th><th>计算原理</th><th>核心痛点 / 优势</th><th>适用场景</th></tr>
+  <tr><td><strong>数值有限差分 (FDM)</strong></td><td>$\frac{f(x+h) - f(x)}{h}$</td><td><strong>截断误差 vs 浮点舍入误差</strong>的两难夹击：$h$ 大了截断误差大，$h$ 小了遭遇浮点相消灾难。</td><td>传统网格流体推进</td></tr>
+  <tr><td><strong>符号解析微分 (Symbolic)</strong></td><td>如 SymPy/Mathematica 公式化推导</td><td><strong>表达式灾难性膨胀（Expression Swell）</strong>：高阶复合函数的代数项呈指数级暴增，求值极其缓慢。</td><td>小规模理论公式推导</td></tr>
+  <tr><td><strong>自动微分 (Autograd)</strong></td><td>跟踪计算图初等算子，数值传递并累乘局部 Jacobian</td><td><strong>机器浮点绝对精度（无截断误差）</strong>，开销与前向计算相当！</td><td>深度学习反向传播与 SciML</td></tr>
+</table>
+
+<h2>2 · 慢动作剖析：二阶导数计算图保留的底层生命线</h2>
+
+<p>设一维物理场为网络映射：$u = \mathcal{N}_\theta(t)$。我们要计算振动阻尼项 $\frac{du}{dt}$ 与惯性加速度项 $\frac{d^2 u}{dt^2}$。</p>
+
+<h3>第一步：计算一阶导数 $\frac{du}{dt}$</h3>
+<pre><code>u_t = torch.autograd.grad(
+    outputs=u, 
+    inputs=t, 
+    grad_outputs=torch.ones_like(u),
+    create_graph=True  # ★ 决定生死的关键开关！
+)[0]</code></pre>
+<p>当 <code>create_graph=True</code> 时，PyTorch 不仅算出了数值导数 <code>u_t</code>，更在底层将求导这一系列算子本身<strong>作为新的节点连接进了前向动态计算图</strong>！此时 <code>u_t</code> 依然拥有自己的 <code>grad_fn</code>，它仍然是一个对输入变量 $t$ 和网络参数 $\theta$ 保持可微追踪的动态张量。</p>
+
+<h3>第二步：计算二阶导数 $\frac{d^2 u}{dt^2}$</h3>
+<pre><code>u_tt = torch.autograd.grad(
+    outputs=u_t,  # 将一阶导作为输入
+    inputs=t, 
+    grad_outputs=torch.ones_like(u_t),
+    create_graph=True
+)[0]</code></pre>
+
+<div class="box deepen">
+  <span class="box-title">◆ 致命血泪教训：如果把 <code>create_graph</code> 设为 False 会发生什么？</span>
+  如果在算 <code>u_t</code> 时 <code>create_graph=False</code>，PyTorch 就会在算出一阶导数值后直接把图撕毁！<code>u_t</code> 蜕变成了一个孤立的浮点叶子张量。当你紧接着调用二阶求导时，PyTorch 会无情抛出：<br>
+  <code>RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn</code>！<br>
+  不仅如此，即使不报错，如果后续计算总损失 $\mathcal{L} = (u_{tt} + \dots)^2$ 并调用 <code>loss.backward()</code> 时，由于二阶残差与网络初始参数 $W, b$ 的图连接早已断裂，参数将完全接收不到梯度更新！
+</div>
+
+<h2>3 · 工业级最小自包含实现：阻尼振子残差装配</h2>
+
+<pre><code>import torch
+import torch.nn as nn
+
+# 1. 搭建 Tanh 光滑单输入单输出网络
+net = nn.Sequential(
+    nn.Linear(1, 32), nn.Tanh(),
+    nn.Linear(32, 32), nn.Tanh(),
+    nn.Linear(32, 1)
+)
+
+# 2. 构造配点并声明保留梯度追踪
+t = torch.linspace(0, 5, 100, requires_grad=True)[:, None]
+u = net(t)
+
+# 3. 严格链式高阶自动微分计算
+# 3.1 一阶导 du/dt
+u_t = torch.autograd.grad(
+    u, t, grad_outputs=torch.ones_like(u), create_graph=True
+)[0]
+
+# 3.2 二阶导 d^2u/dt^2
+u_tt = torch.autograd.grad(
+    u_t, t, grad_outputs=torch.ones_like(u_t), create_graph=True
+)[0]
+
+# 4. 组装物理微分方程残差: m * u_tt + mu * u_t + k * u = 0
+m, mu, k = 1.0, 0.4, 4.0
+residual_pde = m * u_tt + mu * u_t + k * u
+loss_pde = torch.mean(residual_pde ** 2)
+
+print(f"Physics Residual MSE Loss: {loss_pde.item():.4e}")
+# 验证反向传播是否能顺畅击穿至第一层网络权重
+loss_pde.backward()
+print("First layer weight gradient norm:", net[0].weight.grad.norm().item())</code></pre>
+
+<table>
+  <tr><th>代码要素</th><th>底层机理</th><th>工程防错规范</th></tr>
+  <tr><td><code>t.requires_grad = True</code></td><td>将自变量坐标标记为可微分叶子节点</td><td>配点坐标必须是浮点类型且显式开启 grad。</td></tr>
+  <tr><td><code>grad_outputs=torch.ones_like</code></td><td>向量-雅可比积（VJP）的标量投影起点</td><td>多输出或批次输入时必须传入全 1 张量驱动反向传播。</td></tr>
+  <tr><td><code>create_graph=True</code></td><td>构建元微分计算图（Graph on Graph）</td><td>只要后续还需要对该导数再求导，或者需要对网络权重反传，必须开启！</td></tr>
+  <tr><td><code>[0]</code> 切片提取</td><td><code>autograd.grad</code> 默认返回元组</td><td>必须提取元组第 0 个元素得到真正的梯度张量。</td></tr>
+</table>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】计算图断裂引发 RuntimeError 实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>用 PyTorch 计算二阶导数 $rac{d^2 u}{dt^2}$。在求一阶导时执行：`d1 = torch.autograd.grad(u, t, grad_outputs=..., create_graph=False)[0]`。紧接着用 `d1` 对 `t` 再次求导：</p>
+    <p><strong>【请你先猜】</strong>第二次求导能顺利进行吗？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>PyTorch 立即抛出致命错误：<code>RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn</code>！</p>
+    <p><strong>【物理与数值归因】</strong><br>当 <code>create_graph=False</code> 时，求一阶导的操作本身不会被记录在动态前向计算图中。因此 <code>d1</code> 只是一个没有微分追踪历史的孤立张量，无法对其进一步求高阶偏导！求高阶导时必须显式声明 <code>create_graph=True</code> 保留元计算图！</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在二维空间中，我们需要计算拉普拉斯扩散残差 $\nabla^2 u = u_{xx} + u_{yy}$。请补齐对多元时空输入分别求偏导的代码：</p>
+<pre><code># x, y 均为 requires_grad=True 的张量
+u = model(x, y)
+# 1. 计算一阶偏导
+u_x = torch.autograd.grad(u, x, grad_outputs=torch.ones_like(u), create_graph=True)[0]
+u_y = torch.autograd.grad(u, y, grad_outputs=torch.ones_like(u), create_graph=True)[0]
+# 2. TODO [主动生成]: 计算二阶拉普拉斯偏导并求和
+laplacian_u = # 请写出 u_xx + u_yy 的完整调用</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>u_xx = torch.autograd.grad(u_x, x, grad_outputs=torch.ones_like(u_x), create_graph=True)[0]
+u_yy = torch.autograd.grad(u_y, y, grad_outputs=torch.ones_like(u_y), create_graph=True)[0]
+laplacian_u = u_xx + u_yy</code></pre>
+    <p><strong>【底层机理解析】：</strong>在多维空间中，标量场 $u$ 对 $x$ 与 $y$ 的偏导是独立沿着计算图对应的输入分支反向传播求取的。计算 $u_{xx}$ 时以 $u_x$ 对 $x$ 求导，计算 $u_{yy}$ 时以 $u_y$ 对 $y$ 求导，二者相加即为纯正的解析拉普拉斯算子！</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>4.3 单步手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 计算图反传心智模型对齐</span>
+  <p><strong>【前向计算链条】：</strong>输入 $x$，神经元计算 $z = 2x + 1$，激活输出 $u = z^2$。<br>
+  定义微分损失：$\mathcal{L} = \frac{du}{dx}$。</p>
+  <p><strong>【纸笔任务】：</strong>手动推导 $\frac{du}{dx}$ 的表达式，并说明当对其再求反向传播梯度时，对权重系数 2 的偏导数是多少？</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演解答</summary>
+    <div class="a">
+      1. 一阶导：$\frac{du}{dx} = \frac{du}{dz} \frac{dz}{dx} = 2z \times 2 = 4(2x + 1) = 8x + 4$；<br>
+      2. 此时一阶导数依然依赖权重系数 $w=2$（$\frac{du}{dx} = 2w(wx+1)$）；<br>
+      3. 若损失为一阶导自身，当对权重 $w$ 求反向梯度时，PyTorch 会对这整个链条进行元微分求导！这就是为什么自动微分能让物理方程的误差精准调整底层权重。
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位研究员在编写自定义残差计算函数时，随手添加了调试打印，导致后续所有优化步骤的网络权重死死冻结：</p>
+  <pre><code>def compute_residual(u, t):
+    u_t = torch.autograd.grad(u, t, grad_outputs=torch.ones_like(u), create_graph=True)[0]
+    # 调试时随手加了一句 detach()
+    res = u_t.detach() + 0.1 * u
+    return res</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出 <code>.detach()</code> 是如何将梯度流物理阻断的？</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【失效机理】：</strong><code>.detach()</code> 的作用是将张量从当前的动态计算图中强行剥离为一个全新的独立叶子节点。在这个残差定义中，当总损失反向传播时，流经 <code>u_t</code> 的梯度在 <code>.detach()</code> 处被硬生生砍断为零！网络永远无法接收到如何调节自身以满足一阶物理导数的信号，物理训练彻底名存实亡。</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>res = u_t + 0.1 * u  # 绝不可在计算图中途调用 detach() 或 item()</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  自动微分不是人肉推公式，也不是做除法，它是计算图的连环倒带！
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>自动微分（Autograd）既不是有限差分，也不是人工在草稿纸上算出的公式，它到底是怎么算出来的？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>雅可比矩阵、前向累加、后向模式、对偶数、计算图拓扑排序</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “电脑把极其复杂的公式全部拆解成最基础的加减乘除和正弦指数这些简单小积木。在算输出结果的同时，它在账本上顺便记下每一个小积木局部的斜率规则。最后像连环倒带一样，利用高中复合函数链式法则，把这些现成的局部斜率瞬间乘在一起，毫厘不差地得到绝对精确的真实导数。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（微商间距趋于 0 时）：</strong>有限差分在 $\Delta x 	o 0$ 时会遭遇浮点截断灾难；而自动微分由于走解析链式法则，其相对精度恒定保持在机器浮点精度内（$<10^{-16}$）。</li>
+  <li><strong>极限二（不可导物理间断点）：</strong>当物理现象遭遇理想间断激波或接触摩擦时，函数在数学上属于非可微点。PyTorch 会在拐点返回次梯度（Subgradient），可能引发物理残差虚假跳变。</li>
+  <li><strong>极限三（显存爆炸极限）：</strong>高阶自动微分需要构建元计算图，计算三阶导数时图的深度和节点数量呈乘方膨胀，显存消耗呈指数级剧增。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>既然自动微分精度如此完美且不依赖网格，为什么大型气象预报和航空工业 CFD 至今依然使用有限体积或有限差分算导数？</p>
+  <p><strong>【真实底层】：</strong>因为<strong>显存与计算代价极其悬殊</strong>！工业 CFD 的三维网格包含数千万甚至上亿个单元，差分算子是原位内存模板操作，几乎零显存开销；而如果给上亿个网格点构建动态自动微分计算图，光是存储计算图的中间激活值就需要几十 TB 的显存！工业工程永远是精度与算力成本的权衡抉择。</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>单元测试：高阶自动微分对解析解的像素级机器精度核验！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>PINN-0003</td></tr>
+  <tr><th>对接内核模块</th><td><code>tests/test_pinn_gradients.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe -m unittest tests/test_pinn_gradients.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>高阶自动微分计算的一阶、二阶导曲线与解析导数残差零基线对比图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证 PyTorch 元计算图保持机制，自动微分在全域严格达成机器精度，无数值相消</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>二阶导数相对解析解最大绝对误差 $< 1.0 \times 10^{-6}$，单元测试全部通过</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：多任务拔河与梯度病理大决战！</span>
+  <p>到这里，我们已经同时拥有了光滑可微的网络骨架与机器精度的自动微分引擎。是时候把物理方程、初始条件和边界条件全部装配成完整的 PINN 系统了！</p>
+  <p>但是，当你满怀信心按下运行键时，往往会遭遇当头一棒：网络输出全部坍缩成了常数 0！下一章我们将进入 <strong>第 14 章 · B4 PINN 完整训练与多任务损失调平</strong>！我们将揭露让无数博士生通宵抓狂的<strong>梯度病理（Gradient Pathology，Wang et al. 2021）</strong>：不同物理损失项之间如何相互撕扯产生多任务拔河冲突？如何通过权重调平驯服狂暴的物理方程？</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，请在对话框向导师发送：“<em>导师，我对自动微分计算图与保留机制已彻底掌握，请出题考查我对元导数的推导！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0012-b2-bare-nn-training.html">← 第 12 章 · B2 裸神经网络拟合与频域偏置</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0014-b4-pinn-full.html">第 14 章 · B4 PINN 完整训练与多任务损失调平 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷二：隐式神经场与 PINN 范式革命</p>
+</footer>
+
+</div>
+</body>
+</html>

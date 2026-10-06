@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0001 · 物理场离散表征与连续内存纪律</title>
+<style>
+/* CFDPython 双轨课程共享样式表 —— 所有课页与参考页统一引用 */
+:root {
+  --ink: #1f2328;
+  --paper: #fffdf7;
+  --soft: #f6f4ec;
+  --accent: #0f6b6b;        /* 主强调：深青 */
+  --accent-2: #b3541e;      /* 次强调：赭橙 */
+  --line: #d8d2c2;
+  --code-bg: #f4f2ea;
+  --muted: #6e6a5e;
+  --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --sans: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* ---------- 头部 ---------- */
+header.lesson-head {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 1.2rem;
+  margin-bottom: 2.2rem;
+}
+.kicker {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.meta {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.meta a { color: var(--accent); text-decoration: none; }
+.meta a:hover { text-decoration: underline; }
+
+/* ---------- 正文 ---------- */
+h2 {
+  font-size: 1.28rem;
+  margin: 2.6rem 0 0.9rem;
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.6rem; }
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-2); }
+
+strong { font-weight: 700; }
+
+/* ---------- 代码 ---------- */
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.12em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.cm { color: #8a8577; font-style: italic; }      /* 代码注释色（教学用内联高亮） */
+
+/* ---------- 提示框 ---------- */
+.box {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  background: var(--soft);
+  padding: 1rem 1.3rem;
+  margin: 1.6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.box .box-title {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+/* 补给箱语义变体：取代曾散落各页的行内样式，改色只改这里 */
+.box.prep    { border-left-color: #2563eb; }   /* 课前补给：蓝 */
+.box.deepen  { border-left-color: #d97706; }   /* 补强/深化：琥珀 */
+.box.feynman { border-left-color: #7c3aed; background: #faf5ff; } /* 费曼穿透：紫 */
+.box.feynman .box-title { color: #6d28d9; }
+.box.debug   { border-left-color: #dc2626; background: #fef2f2; } /* 故障注入：红 */
+.box.debug .box-title { color: #b91c1c; }
+.box.task    { border-left-color: #059669; background: #f0fdf4; } /* 工程任务：绿 */
+.box.task .box-title { color: #047857; }
+.box.mentor  { border-left-color: #0284c7; background: #f0f9ff; } /* 导师对接：天蓝 */
+.box.mentor .box-title { color: #0369a1; }
+
+/* 预测-观察-反思 (POE) 交互卡片 */
+details.predict {
+  border: 1px solid var(--line);
+  border-left: 4px solid #2563eb;
+  border-radius: 5px;
+  background: #f8fafc;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.predict summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  color: #1e40af;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.predict summary::before {
+  content: "🔮";
+}
+details.predict .predict-body {
+  padding: 0.5rem 1.4rem 1.2rem;
+  border-top: 1px dashed var(--line);
+  color: #1e293b;
+}
+
+/* ---------- 今日战果 ---------- */
+.win {
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.1rem 1.4rem;
+  margin: 1.8rem 0;
+  background: #f0f7f5;
+}
+.win .box-title { color: var(--accent); }
+
+/* ---------- 小测（检索练习） ---------- */
+details.quiz {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  margin: 1rem 0;
+  padding: 0;
+}
+details.quiz summary {
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 600;
+  padding: 0.8rem 1.1rem;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+details.quiz summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+details.quiz[open] summary::before { transform: rotate(90deg); }
+details.quiz .a {
+  padding: 0.3rem 1.4rem 1rem;
+  border-top: 1px dashed var(--line);
+  color: #33413b;
+}
+details.quiz .a::before {
+  content: "答案";
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  display: block;
+  margin-top: 0.6rem;
+}
+
+/* ---------- 术语表 ---------- */
+dl.gloss dt {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 1.1rem;
+}
+dl.gloss dt .en { font-weight: 400; color: var(--muted); font-size: 0.85em; }
+dl.gloss dd { margin: 0.2rem 0 0 0; }
+
+/* ---------- 表格 ---------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.4rem 0;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--soft); }
+tr:nth-child(even) td { background: #fbfaf4; }
+
+/* 定量实验卡片：突出"问题/基线/变量/指标"四要素 */
+table.card th { width: 4.5rem; background: var(--accent-soft, #eef3e8); color: #40533a; white-space: nowrap; }
+table.card td { font-size: 0.86rem; }
+
+/* ---------- 页脚导航 ---------- */
+footer.lesson-foot {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 3px double var(--line);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+footer.lesson-foot .nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+footer.lesson-foot p { margin-top: 0.8rem; }
+footer.lesson-foot a { color: var(--accent); text-decoration: none; }
+footer.lesson-foot a:hover { text-decoration: underline; }
+
+/* ---------- 平板 / 小屏适配 ---------- */
+@media (max-width: 820px) {
+  html { font-size: 16px; }
+  .page { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; }
+  pre {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 0.85rem 1rem;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  code { word-break: break-word; }
+  /* 代码行内注释在窄屏不自动换行断在奇怪位置 */
+  pre code { white-space: pre; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.5rem; }
+  .box, .win { padding: 0.9rem 1.1rem; }
+  footer.lesson-foot .nav { flex-direction: column; gap: 0.4rem; }
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  details.quiz { border: 1px solid #999; }
+  details.quiz .a { display: block !important; }
+  pre { background: #fff; }
+}
+
+</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">Volume I · Chapter 01 / 经典离散底座</p>
+  <h1>0001 · 物理场离散表征与连续内存纪律</h1>
+  <p class="meta">预计 30 分钟 ｜ 核心：连续空间网格化 · NumPy 跨步视图与内存隔离 · 向量化加速比 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与全书序曲 · 从连续现实到离散阵列</span>
+  <p><strong>计算物理的核心任务：</strong>将受偏微分方程控制的连续时空物理场（如速度 $u(x,t)$、压力 $p(x,y,t)$），转化为计算机物理内存中可以被高速代数运算的离散浮点数组。</p>
+  <p><strong>本章使命：</strong>不急于求解复杂方程，首先建立两项终身受益的数值计算心智纪律：</p>
+  <ul>
+    <li><strong>场即数组：</strong>代码中的 <code>u[i]</code> 绝不是孤立的“第 i 个数”，而是连续物理场在空间坐标点 $x_i = i\Delta x$ 处的物理状态。</li>
+    <li><strong>内存视图与时间层隔离：</strong>彻底搞懂 NumPy 的切片视图（View）与物理拷贝（Copy）机制，杜绝时间推进中致命的就地内存污染。</li>
+  </ul>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 建立一维连续坐标向离散数组网格点映射的严格心智模型；<br>
+  ② 掌握向量化切片加速与原生 Python 循环的性能分水岭（实测 50~100 倍吞吐差）；<br>
+  ③ 固化 <code>un = u.copy()</code> 时间层物理隔离铁律，防范数值算法最隐蔽的幽灵污染。
+</div>
+
+<h2>1 · 物理场的离散表征：网格与标量场</h2>
+
+<p>在连续微积分中，一维物理场是一个连续实变函数 $u: [0, L] 	imes [0, T] 	o \mathbb{R}$。但在数字计算机内部，只能在有限个采样点上存储场值。我们将计算域 $[0, L]$ 均匀剖分为 $n_x - 1$ 个子区间，产生 $n_x$ 个空间格点：</p>
+
+$$x_i = i \cdot \Delta x = i \cdot \frac{L}{n_x - 1}, \quad i = 0, 1, 2, \dots, n_x - 1$$
+
+<p>连续场 $u(x, t)$ 在时刻 $t^n = n \Delta t$ 处的离散值简记为：</p>
+
+$$u_i^n \equiv u(x_i, t^n) = u(i\Delta x, n\Delta t)$$
+
+<p>在 Python 代码中，整个物理场在某一时刻的状态被紧凑表达为一个长度为 $n_x$ 的 NumPy 数组 <code>u</code>。每个元素下标 <code>i</code> 与物理空间坐标 $x_i$ 严格一一对齐。</p>
+
+<h2>2 · 工业级参考实现：空间网格与向量化差分</h2>
+
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+# 1. 空间计算域配置
+nx = 41              # 空间总格点数
+L = 2.0              # 物理总长度 [m]
+dx = L / (nx - 1)    # 空间离散步长 Δx = 0.05 m
+x = np.linspace(0, L, nx)
+
+# 2. 构造初始阶跃场（方帽初值）
+u = np.ones(nx)
+u[int(0.5 / dx) : int(1.0 / dx + 1)] = 2.0  # 区间 [0.5, 1.0] 置为 2.0
+
+# 3. 内存视图与独立快照隔离
+un = u.copy()        # ★ 铁律：必须分配独立物理内存快照
+
+# 4. 向量化相邻差分计算 (右减左)
+# 原生循环: for i in range(1, nx): diff[i] = u[i] - u[i-1]
+diff_vectorized = u[1:] - u[:-1]  # 零循环 SIMD 向量化计算</code></pre>
+
+<table>
+  <tr><th>参数 / 语法</th><th>物理数学含义</th><th>典型值</th><th>敏感性分析与工程防错</th></tr>
+  <tr><td><code>nx</code></td><td>空间格点数量</td><td>41</td><td>决定空间分辨率；影响步长 $\Delta x$ 及后续 CFL 稳定性。</td></tr>
+  <tr><td><code>dx = L / (nx - 1)</code></td><td>空间采样步长 $\Delta x$</td><td>0.05</td><td>分母必须除以 <code>nx - 1</code>（间隔数），误除 <code>nx</code> 会导致区间长度缩水。</td></tr>
+  <tr><td><code>un = u.copy()</code></td><td>分配全新内存副本</td><td>独立地址</td><td>若写成 <code>un = u</code> 则只是别名绑定，原位修改将摧毁时间层因果律。</td></tr>
+  <tr><td><code>u[1:] - u[:-1]</code></td><td>相邻节点一阶差分切片</td><td>长度 <code>nx-1</code></td><td>底层触发 CPU SIMD 矢量寄存器并行计算，耗时缩减两个数量级。</td></tr>
+</table>
+
+<h2>3 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<div class="box">
+  <span class="box-title">◆ 认知防沉迷守则（Dr. Cat Hicks 学习科学框架）</span>
+  拒绝“流畅度陷阱”——读懂代码不等于真正掌握。请在展开折叠卡片前，先在草稿纸上写出你的独立预测！
+</div>
+
+<!-- 1. POE 预测-观察-归因 -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】切片视图与内存别名污染实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>创建一个长度为 10 的全 1 数组 <code>u = np.ones(10)</code>，执行切片 <code>un = u[2:6]</code>。随后对新切片赋新值 <code>un[0] = 999.0</code>。</p>
+    <p><strong>【请你先猜】</strong>此时原始数组的第 2 位元素 <code>u[2]</code> 的值是 1.0 还是 999.0？为什么？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br><code>u[2]</code> 变成了 999.0！原始数组被无声篡改，Python 没有抛出任何警告！</p>
+    <p><strong>【物理与数值归因】</strong><br>NumPy 基本切片语法默认返回底层连续内存块的跨步视图（Strided View），完全不复制任何物理数据。如果误以为切片是独立数据而在步进循环中直接覆盖，就会边读边写，导致上一步历史场值彻底污染！若需独立数据，必须显式调用 <code>.copy()</code>。</p>
+  </div>
+</details>
+
+<!-- 2. 半完成推导与代码填空 -->
+<h3>3.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在差分计算中，我们需要频繁计算二阶中心差分算子 $u_{i+1} - 2u_i + u_{i-1}$。请写出一行完全无 for 循环的纯切片向量化实现：</p>
+<pre><code># TODO [主动生成]: 针对内部点 [1, nx-2]，用切片计算二阶中心差分
+# 提示: 需要三个长度严格相同的切片，分别代表右邻居、自身、左邻居
+d2u = # 请补齐切片差分表达式</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>d2u = u[2:] - 2 * u[1:-1] + u[:-2]</code></pre>
+    <p><strong>【底层机理解析】：</strong><code>u[2:]</code> 截取下标 $[2, n_x-1]$（右邻居 $i+1$），<code>u[1:-1]</code> 截取下标 $[1, n_x-2]$（中心点 $i$），<code>u[:-2]</code> 截取下标 $[0, n_x-3]$（左邻居 $i-1$）。三个切片长度完全相等（均为 $n_x - 2$），底层向量化流水线一次性并发计算完毕。</p>
+  </div>
+</details>
+
+<!-- 3. 单步推演 -->
+<h3>3.3 单步离散手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 纸笔手算心智模型对齐</span>
+  <p><strong>【初始离散状态】：</strong>数组 <code>a = np.array([1.0, 2.0, 4.0])</code>。</p>
+  <p><strong>【手动推演任务】：</strong>执行命令式循环 <code>for i in range(1, 3): a[i] = a[i-1]</code> 与向量化切片操作 <code>a[1:] = a[:-1]</code>，两种执行方式最终的 <code>a</code> 数组分别是什么？为什么完全不同？</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准数值解答</summary>
+    <div class="a">
+      1. <strong>for 循环顺序执行</strong>：当 <code>i=1</code> 时，<code>a[1] = a[0] = 1.0</code>；当 <code>i=2</code> 时，读取刚被改写的新鲜值 <code>a[1]</code>，使 <code>a[2] = a[1] = 1.0</code>。最终数组被传染为 <code>[1.0, 1.0, 1.0]</code>。<br>
+      2. <strong>向量化切片执行</strong>：系统先在寄存器完成右侧 <code>a[:-1]</code>（即快照 <code>[1.0, 2.0]</code>）的整体读取评估，然后原子写入左侧切片。最终数组为 <code>[1.0, 1.0, 2.0]</code>！<br>
+      <strong>核心教训：</strong>显式时间推进算法必须基于同一时刻的历史快照更新，绝不可在循环内就地覆盖！
+    </div>
+  </details>
+</div>
+
+<!-- 4. 故障注入与诊断 -->
+<h3>3.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>以下代码试图进行 5 次加权空间平均滤波，但输出结果完全不符合高斯衰减规律，波形出现奇怪的不对称畸变：</p>
+  <pre><code>u = np.array([1.0, 2.0, 5.0, 2.0, 1.0])
+for step in range(5):
+    un = u              # 记录上一时刻快照
+    for i in range(1, 4):
+        u[i] = 0.25 * un[i-1] + 0.5 * un[i] + 0.25 * un[i+1]</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出哪一行代码违背了时间推进的因果隔离？会导致什么具体后果？给出单行修复方案。</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【问题行】：</strong><code>un = u</code></p>
+      <p><strong>【失效机理】：</strong><code>un = u</code> 只是对象的引用别名传递，两者指向同一块底层物理内存。当内层循环更新 <code>u[1]</code> 时，<code>un[1]</code> 被同步篡改；计算 <code>u[2]</code> 时读取的 <code>un[1]</code> 已经是混入新时刻数据的脏值！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>un = u.copy()</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>4 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  <p>“首要原则是决不要欺骗自己，而你自己正是最容易被欺骗的人。”拒绝用高深术语解释术语，用物理世界看得见摸得着的动作直击本质！</p>
+</div>
+
+<h3>4.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>计算机内存里的一串离散浮点数，怎么就能代表真实空间里连续流动的水流？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>离散化、网格剖分、连续介质、采样定理、指针</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “我们沿着一条水流管道划出许多个紧紧挨着的小隔间，在每个隔间里插一支温度计实时记录水温。根据物理规律，上游的温水下一瞬间就会漂流进下游的隔间。计算机就是按照固定节拍，把前一个隔间里的数字按比例搬运到后一个隔间，把这些数字连起来画在屏幕上，就是奔腾不息的真实波浪。”
+    </div>
+  </details>
+</div>
+
+<h3>4.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当格点数减少到极致（如 $n_x = 2$）时，空间仅剩下两个端点，完全丧失表达波形曲率与梯度的能力，物理场退化为单一的宏观跳跃。</li>
+  <li><strong>极限二（趋近无穷大时）：</strong>当 $n_x \to \infty$ 时，离散数组在数学测度意义下严格收敛于连续实变函数空间，但单步浮点计算量按几何级数暴增，且浮点舍入误差（Round-off Error）开始累积侵蚀真实解。</li>
+  <li><strong>极限三（量纲与现实反例）：</strong>现实中物理流体的“连续性”只在分子碰撞平均自由程之上的宏观尺度成立；若空间格点间距 $\Delta x$ 缩小到纳米量级（克努森数 $Kn > 0.01$），Navier-Stokes 连续假定彻底破灭，必须退化为分子动力学（MD）或玻尔兹曼方程（LBM）。</li>
+</ul>
+
+<h3>4.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么在高性能数值计算中，严禁用 Python 原生 <code>list</code> 存储流体场，而必须用 <code>numpy.ndarray</code>？仅仅是因为语法方便吗？</p>
+  <p><strong>【真实底层】：</strong>Python 原生 <code>list</code> 是一个指针数组，内部每个元素都是一个独立的堆对象（PyObject），内存分布散乱如麻。CPU 遍历 list 时会遭遇毁灭性的缓存未命中（Cache Miss）；而 <code>numpy.ndarray</code> 在底层 C 语言级别开辟绝对连续的物理内存块，CPU 可以利用一级缓存行（Cache Line）预取数据，并启用 AVX2/AVX-512 指令集单指令并发处理 8 个双精度浮点数！这是科学计算工程化的物理基石。</p>
+</div>
+
+<h2>5 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>数值算法研发以<strong>可运行代码、确定性基准、实测误差数字</strong>为准绳！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FDM-0001</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fdm/step01_linear_convection.py</code>（前置环境校验）</td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe -c "import numpy as np; a=np.ones(10); b=a.copy(); print('NumPy Vectorized Memory Check PASS')"</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>1D 方帽初值离散采样点折线分布图（41 节点）</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>确立物理场向连续内存数组映射的数学桥梁，严格执行 copy 时间层物理隔离纪律</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>数组长度 nx=41，内存引用隔离测试 100% 通过</strong></td></tr>
+</table>
+
+<h2>6 ·【承前启后 · 下章预告】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：让场动起来！</span>
+  <p>在本章中，我们在计算机内存中亲手雕刻出了第一个静止的物理场。但物理学的精髓在于<strong>运动与变化</strong>！</p>
+  <p>下一章我们将进入流体力学最基础的动力学母题：<strong>一维线性对流方程（Step 1）</strong>。我们将推导第一个时间步进求解器，让这顶方帽以恒定速度 $c$ 整体向右平移。同时，你将直面数值计算历史上最著名的因果律法则——<strong>迎风格式（Upwind Scheme）</strong>，并目睹一阶格式的人工数值耗散如何悄悄磨圆你的方帽！</p>
+  <p><strong>【导师对接提示】：</strong>完成本章学习后，可直接在对话框向导师发送：“<em>导师，我对切片视图和连续内存规则理解完毕，请抽查我的单步推演手算！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0002-step1-linear-convection.html">0002 Step 1 一维线性对流 →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷一：离散世界与有限差分底座</p>
+</footer>
+
+</div>
+</body>
+</html>

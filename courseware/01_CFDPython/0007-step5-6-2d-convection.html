@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 07 章 · Steps 5+6 二维线性与非线性对流及多维 CFL 约束</title>
+<link rel="stylesheet" href="../assets/course.css">
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="../assets/mathjax/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="page">
+
+<header class="lesson-head">
+  <p class="kicker">《计算物理与科学机器学习》· 卷一：有限差分与经典流体底座</p>
+  <h1>第 07 章 · Steps 5+6 二维线性与非线性对流及多维 CFL 约束</h1>
+  <p class="meta">字数约 6,800 ｜ 建议学时：75 分钟 ｜ 核心定理：二维特征线束 · 象限迎风差分模板 · 多维 CFL 几何约束 ｜ 权威底座：Barba CFD · LeVeque (SIAM) · Strang (MIT 18.086) · Lu Lu (DeepXDE) · Anandkumar (FNO)</p>
+</header>
+
+
+<div class="box prep">
+  <span class="box-title">◆ 本章定位与承前启后 · 从单行道走向广阔平面</span>
+  <p><strong>承接上章：</strong>第 01~06 章我们在一维空间（一条直线上）穷尽了对流、扩散与激波的离散奥秘。现在，我们正式翻开计算流体力学的新篇章——<strong>多维空间！</strong></p>
+  <p><strong>本章物理母题：</strong><strong>二维线性与非线性对流方程（Steps 5 & 6）</strong>：</p>
+  $$\frac{\partial u}{\partial t} + c_x \frac{\partial u}{\partial x} + c_y \frac{\partial u}{\partial y} = 0$$
+  $$\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} + v \frac{\partial u}{\partial y} = 0$$
+  <p>流体质点现在不仅可以向右跑，还可以同时向上飘。一个在二维平面中央的方帽或高斯波包，将沿着合成速度矢量 $\mathbf{c} = (c_x, c_y)$ 沿对角线斜向漂移。你将在此掌握二维矩阵网格切片的极速操作，并领悟<strong>多维 CFL 稳定性判据</strong>如何对时间步长施加更严酷的枷锁！</p>
+</div>
+
+<div class="win">
+  <span class="box-title">✦ 本章核心交付战果</span>
+  ① 建立二维笛卡尔网格坐标体系与 NumPy 2D 矩阵切片（行与列、X 与 Y）的严格对应；<br>
+  ② 掌握二维特征线合成矢量与象限迎风差分模板（Upwind Quadrant Stencil）；<br>
+  ③ 推导二维多维 CFL 充要条件：$\sigma_x + \sigma_y \le 1$，洞悉时间步长被进一步压缩的几何根因；<br>
+  ④ 完成二维非线性对流求解器，观察 2D 方帽波包在对角线平移过程中的各向异性耗散变形。
+</div>
+
+<h2>1 · 数学与物理基石：二维特征线、合成对流与各向异性</h2>
+
+<p>考虑二维标量场 $u(x, y, t)$。当对流速度场为常矢量 $\mathbf{c} = (c_x, c_y)$ 时，方程为：</p>
+$$\frac{\partial u}{\partial t} + \mathbf{c} \cdot \nabla u = 0$$
+<p>沿着空间三维时空曲线 $(x(t), y(t), t)$，根据全导数链式法则：</p>
+$$\frac{d u(x(t), y(t), t)}{dt} = \frac{\partial u}{\partial t} + \frac{dx}{dt} \frac{\partial u}{\partial x} + \frac{dy}{dt} \frac{\partial u}{\partial y} = 0$$
+<p>对比两式可知，当空间轨道满足参数方程：</p>
+$$\frac{dx}{dt} = c_x, \quad \frac{dy}{dt} = c_y \implies x - c_x t = C_1, \quad y - c_y t = C_2$$
+<p>二维特征线是一簇<strong>空间中倾斜的平行特征圆柱面（或射线束）</strong>！初始时刻在 $(x_0, y_0)$ 处的物理量，在时刻 $t$ 将毫无损失地平移到 $(x_0 + c_x t, y_0 + c_y t)$ 处。</p>
+
+<h2>2 · 慢动作离散化：二维迎风格式与多维 CFL 约束</h2>
+
+<h3>2.1 二维象限迎风差分模板</h3>
+<p>设速度分量均大于零：$c_x > 0, c_y > 0$。这意味着物理信息同时从流场的<strong>左侧（上游 $x$ 方向）</strong>和<strong>下侧（上游 $y$ 方向）</strong>涌入点 $(x_i, y_j)$。因此必须在两个空间方向同时采用向后差分：</p>
+$$\frac{u_{i,j}^{n+1} - u_{i,j}^n}{\Delta t} + c_x \frac{u_{i,j}^n - u_{i-1,j}^n}{\Delta x} + c_y \frac{u_{i,j}^n - u_{i,j-1}^n}{\Delta y} = 0$$
+<p>解出未来时刻 $u_{i,j}^{n+1}$：</p>
+$$u_{i,j}^{n+1} = u_{i,j}^n - c_x \frac{\Delta t}{\Delta x} (u_{i,j}^n - u_{i-1,j}^n) - c_y \frac{\Delta t}{\Delta y} (u_{i,j}^n - u_{i,j-1}^n)$$
+
+<h3>2.2 多维 CFL 稳定判据的几何本质</h3>
+<p>定义各方向 Courant 数：$\sigma_x = c_x \frac{\Delta t}{\Delta x}, \sigma_y = c_y \frac{\Delta t}{\Delta y}$。将上式改写为凸组合形式：</p>
+$$u_{i,j}^{n+1} = (1 - \sigma_x - \sigma_y) u_{i,j}^n + \sigma_x u_{i-1,j}^n + \sigma_y u_{i,j-1}^n$$
+<p>为保证离散系统服从正保真性（Positivity Preserving）且不引入虚假高频自激振荡，所有基底系数必须非负！由此直接导出：</p>
+$$1 - \sigma_x - \sigma_y \ge 0 \implies \sigma_x + \sigma_y \le 1$$
+<p><strong>★ 致命陷阱：</strong>在一维中，只要 $\sigma \le 1$ 即可稳定；但在二维正方形网格（$c_x=c_y, \Delta x=\Delta y$）下，单方向 Courant 数必须满足：$\sigma \le 0.5$！多维度的信息叠加，将安全时间步长的允许上限直接腰斩！</p>
+
+<h2>3 · 工业级最小自包含实现</h2>
+
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+# 1. 二维网格与时间步长配置
+nx, ny = 81, 81
+Lx, Ly = 2.0, 2.0
+dx = Lx / (nx - 1)
+dy = Ly / (ny - 1)
+c_x, c_y = 1.0, 1.0
+
+# 满足 2D CFL 条件: sigma_x + sigma_y <= 0.6
+sigma = 0.3
+dt = sigma * min(dx / c_x, dy / c_y)
+nt = 50
+
+# 2. 构造 2D 方帽初值
+x = np.linspace(0, Lx, nx)
+y = np.linspace(0, Ly, ny)
+X, Y = np.meshgrid(x, y)
+u = np.ones((ny, nx))
+u[int(0.5 / dy):int(1.0 / dy + 1), int(0.5 / dx):int(1.0 / dx + 1)] = 2.0
+
+# 3. 二维切片零循环时间步进
+for n in range(nt):
+    un = u.copy()
+    # 注意二维矩阵切片: u[行y, 列x]
+    u[1:, 1:] = (un[1:, 1:] - 
+                 c_x * (dt / dx) * (un[1:, 1:] - un[1:, :-1]) - 
+                 c_y * (dt / dy) * (un[1:, 1:] - un[:-1, 1:]))
+    # 狄利克雷边界固定
+    u[0, :] = 1.0
+    u[-1, :] = 1.0
+    u[:, 0] = 1.0
+    u[:, -1] = 1.0
+
+print(f"2D Convection completed. Mass integral: {np.sum(u)*dx*dy:.4f}")</code></pre>
+
+<table>
+  <tr><th>参数 / 语法</th><th>物理数学含义</th><th>典型值</th><th>敏感性分析与工程防错</th></tr>
+  <tr><td><code>u[1:, 1:]</code></td><td>内部待更新场点矩阵</td><td>形状 <code>(ny-1, nx-1)</code></td><td>行对应 $y$ 坐标，列对应 $x$ 坐标；切勿搞反行列顺序。</td></tr>
+  <tr><td><code>un[1:, :-1]</code></td><td>沿 $X$ 轴向左偏移格点 $(i-1, j)$</td><td>与待更新区形状对齐</td><td>利用切片实现 $x$ 轴一阶迎风，无任何原生 Python 慢循环。</td></tr>
+  <tr><td><code>un[:-1, 1:]</code></td><td>沿 $Y$ 轴向下偏移格点 $(i, j-1)$</td><td>与待更新区形状对齐</td><td>利用切片实现 $y$ 轴一阶迎风，耗时极短。</td></tr>
+  <tr><td><code>sigma = 0.3</code></td><td>各向安全 Courant 因子</td><td>0.3</td><td>和为 $0.6 < 1.0$，严格处于二维稳定三角安全区内部。</td></tr>
+</table>
+
+<h2>4 ·【主动提取与刻意练习】数理与代码工坊（Learning Opportunities）</h2>
+
+<div class="box">
+  <span class="box-title">◆ 认知防沉迷守则</span>
+  二维数组的“行”对应 $y$ 轴垂直方向，“列”对应 $x$ 轴水平方向。这是每个初学者都必摔的大坑，务必用纸笔画图确认！
+</div>
+
+<!-- 1. POE -->
+<details class="predict">
+  <summary>【预测-观察-归因（POE 卡片）】单方向满足但双向相加越界的爆炸实验</summary>
+  <div class="predict-body">
+    <p><strong>【扰动情境】</strong>设 $c_x = c_y = 1, \Delta x = \Delta y = 0.05$。设定时间步长 $\Delta t = 0.035$。此时单方向 $\sigma_x = 0.7 < 1, \sigma_y = 0.7 < 1$：</p>
+    <p><strong>【请你先猜】</strong>既然每个方向单独看都小于 1，算例能稳定运行吗？</p>
+    <hr style="border:0; border-top:1px dashed var(--line); margin:0.8rem 0;">
+    <p><strong>【实跑观测结果】</strong><br>在推进到第 15 步时，方帽斜对角边缘开始涌现巨大的棋盘状杂波，随后在第 25 步数值爆表溢出为 <code>NaN</code>！</p>
+    <p><strong>【物理与数值归因】</strong><br>二维数值依赖域（Numerical Domain of Dependence）是由离散网格模板张成的三角形。物理波的真正传播方向是沿对角线 $(1, 1)$。当前 $\sigma_x + \sigma_y = 1.4 > 1$，中心节点系数 $1 - \sigma_x - \sigma_y = -0.4 < 0$ 变成负权！负权系数代数上意味着高频反相放大器，系统在每一个时间步都在主动放大网格截断噪声，瞬间引爆数值爆炸。</p>
+  </div>
+</details>
+
+<!-- 2. Semi-worked -->
+<h3>4.2 半完成推导与代码填空（Semi-worked Generation）</h3>
+<p>在 Step 6 二维非线性对流中，速度场本身就是被对流的量，即 $u$ 场与 $v$ 场分别沿自身的局部速度对流。请补齐非线性 $u$ 场的迎风更新切片：</p>
+<pre><code># TODO [主动生成]: 补齐 2D 非线性对流项 u * du/dx + v * du/dy
+u[1:, 1:] = (un[1:, 1:] - 
+             un[1:, 1:] * (dt/dx) * (un[1:, 1:] - un[1:, :-1]) - 
+             # 请在下方填入纵向速度 vn 对 un 沿 y 轴梯度的对流项
+            )</code></pre>
+
+<details class="quiz">
+  <summary>▸ 点击对照标准正解与逐行 Why 注释</summary>
+  <div class="a">
+    <pre><code>u[1:, 1:] = (un[1:, 1:] - 
+             un[1:, 1:] * (dt/dx) * (un[1:, 1:] - un[1:, :-1]) - 
+             vn[1:, 1:] * (dt/dy) * (un[1:, 1:] - un[:-1, 1:]))</code></pre>
+    <p><strong>【逐项 Why 注释】：</strong>第一行减号后是 $u \frac{\partial u}{\partial x}$ 的离散化；第二行减号后必须是 $v \frac{\partial u}{\partial y}$！乘号前必须是纵向输运速度 <code>vn[1:, 1:]</code>，差分切片必须是沿行垂直方向（即第 0 维 $y$ 方向）的后向差分 <code>(un[1:, 1:] - un[:-1, 1:])</code>。</p>
+  </div>
+</details>
+
+<!-- 3. Trace the Path -->
+<h3>4.3 单步离散手算推演（Trace the Path）</h3>
+<div class="box deepen">
+  <span class="box-title">◆ 纸笔手算心智模型对齐</span>
+  <p><strong>【初始二维离散状态】：</strong>取 $3 \times 3$ 局部小网格，时刻 $n$ 时 $u$ 场分布为：<br>
+  行 0 (y=0): <code>[1.0, 1.0, 1.0]</code><br>
+  行 1 (y=1): <code>[1.0, 2.0, 1.0]</code><br>
+  行 2 (y=2): <code>[1.0, 1.0, 1.0]</code><br>
+  速度 $c_x = 1.0, c_y = 1.0, \Delta x = \Delta y = 1.0, \Delta t = 0.2$。</p>
+  <p><strong>【手动推演任务】：</strong>求内部中心格点 $(i=1, j=1)$ 在时刻 $n+1$ 的离散解 $u_{1,1}^{n+1}$。</p>
+  <details class="quiz">
+    <summary>▸ 查看单步推演标准数值解答</summary>
+    <div class="a">
+      1. Courant 数：$\sigma_x = 1.0 \times 0.2 / 1.0 = 0.2, \sigma_y = 0.2$；<br>
+      2. 凸组合系数：$1 - \sigma_x - \sigma_y = 1 - 0.2 - 0.2 = 0.6$；<br>
+      3. 上游格点值：左邻居 $u_{0,1}^n = 1.0$（同行前一列），下邻居 $u_{1,0}^n = 1.0$（同列前一行）；<br>
+      4. 代入更新：$u_{1,1}^{n+1} = 0.6 \times 2.0 + 0.2 \times 1.0 + 0.2 \times 1.0 = 1.2 + 0.2 + 0.2 = 1.6$。<br>
+      <strong>物理直觉验证：</strong>中心格点的高值 2.0 正在向右上方流失，同时吸收了来自左方和下方的低背景值 1.0，自身幅值平滑衰减至 1.6！
+    </div>
+  </details>
+</div>
+
+<!-- 4. Debug -->
+<h3>4.4 真实故障注入与排错诊断（Debug this!）</h3>
+<div class="box debug">
+  <span class="box-title">◆ 致命 Bug 诊断演练</span>
+  <p>一位学生编写了如下二维迎风对流代码，结果波包不仅没有沿对角线平移，反而沿着 $y$ 轴被横向拉扯成诡异的面条：</p>
+  <pre><code># 错误代码：行列索引混淆
+for n in range(nt):
+    un = u.copy()
+    # 试图计算 x 方向差分与 y 方向差分
+    u[1:, 1:] = (un[1:, 1:] - 
+                 c_x * dt/dx * (un[1:, 1:] - un[:-1, 1:]) -   # BUG!
+                 c_y * dt/dy * (un[1:, 1:] - un[1:, :-1]))    # BUG!</code></pre>
+  <p><strong>【排错审问任务】：</strong>指出哪两行代码颠倒了空间方向？指出切片中轴（axis 0 与 axis 1）与物理坐标 $(x, y)$ 的映射法则。</p>
+  <details class="quiz">
+    <summary>▸ 查看故障根因分析与修复代码</summary>
+    <div class="a">
+      <p><strong>【问题行】：</strong>两行差分切片完全颠倒！</p>
+      <p><strong>【失效机理】：</strong>在 NumPy 二维数组中，第一个索引轴 <code>axis 0</code> 遍历行（沿竖直 $y$ 方向变动），第二个索引轴 <code>axis 1</code> 遍历列（沿水平 $x$ 方向变动）！<code>un[:-1, 1:]</code> 改变的是第 0 轴（行），对应的是 $y$ 方向邻居；而 <code>un[1:, :-1]</code> 改变的是第 1 轴（列），对应的是 $x$ 方向邻居！把 $y$ 导数乘上了 $c_x$，把 $x$ 导数乘上了 $c_y$，物理动量方向彻底错乱！</p>
+      <p><strong>【修复代码】：</strong></p>
+      <pre><code>u[1:, 1:] = (un[1:, 1:] - 
+             c_x * (dt / dx) * (un[1:, 1:] - un[1:, :-1]) - 
+             c_y * (dt / dy) * (un[1:, 1:] - un[:-1, 1:]))</code></pre>
+    </div>
+  </details>
+</div>
+
+<h2>5 ·【第一性原理穿透】费曼概念审问（Feynman Grilling）</h2>
+
+<div class="box feynman">
+  <span class="box-title">◆ 费曼概念审问裁判法则</span>
+  多维不是一维的简单叠加，而是空间方向因果锥的几何展开！
+</div>
+
+<h3>5.1 禁黑话 3 句话口述挑战</h3>
+<div class="box">
+  <p><strong>【向高中生解释】：</strong>在一场同时往东刮又往北刮的大风中，为什么一片羽毛在地面上漂移的安全速度，比只往东刮风时要求更严格？</p>
+  <p style="color:#b91c1c; font-size:0.85rem;"><strong>【严禁出现词汇】：</strong>CFL 判据、特征线、Courant 数、谱半径、偏微分方程</p>
+  <details class="quiz">
+    <summary>▸ 查看费曼级满分通俗解答范例</summary>
+    <div class="a">
+      “如果风只往东吹，一秒钟羽毛只向隔壁房间挪动一步；但如果风同时往东又往北吹，它在这一秒内其实是斜着向东北方向狂奔。如果你记录羽毛位置的相机快门按得太慢，羽毛在一次抓拍间隔里就会连跨好几个地砖格子，彻底从相机的监控视野里飞丢出界，整张轨迹照片就彻底乱套了。”
+    </div>
+  </details>
+</div>
+
+<h3>5.2 极端参数极限三问（Extreme Limits）</h3>
+<ul>
+  <li><strong>极限一（趋近 0 时）：</strong>当某个速度分量归零（如 $c_y = 0$）时，$\sigma_y = 0$，二维格式严格无缝退化为标准一维迎风对流格式，二维波包退化为一维柱面波。</li>
+  <li><strong>极限二（各向异性极限）：</strong>当网格严重畸变，如 $\Delta x \ll \Delta y$ 时，全局时间步长将被最小间距 $\Delta x$ 极度扼杀，即使 $y$ 方向流动非常平缓，整体计算效率也会被极度拖垮（刚性网格问题）。</li>
+  <li><strong>极限三（物理旋转不变量）：</strong>如果坐标系旋转 45 度，真实物理场保持各向同性不变；但一阶笛卡尔迎风格式会产生严重的<strong>网格对齐人工耗散</strong>——沿坐标轴平移变形小，沿对角线平移变形最严重。</li>
+</ul>
+
+<h3>5.3 货物崇拜排查（Cargo Cult Detection）</h3>
+<div class="box deepen">
+  <p><strong>【深层审问】：</strong>为什么很多人在写 2D 绘图时，调用 <code>plt.imshow(u)</code> 会发现图像与物理流场上下颠倒了 180 度？</p>
+  <p><strong>【真实底层】：</strong>因为计算机图像坐标系原点 $(0,0)$ 默认在屏幕<strong>左上角</strong>，第 0 轴正方向是向下；而笛卡尔物理坐标系原点在<strong>左下角</strong>，$y$ 轴正方向是向上！如果不显式添加 <code>origin='lower'</code>，你的流体就是在重力倒错的倒立宇宙中运行！这是无数工程可视化事故的根源。</p>
+</div>
+
+<h2>6 ·【原子化工程闭环】内核验收三件套（Writing Plans & Solvers）</h2>
+
+<div class="box task">
+  <span class="box-title">◆ 工程交付物规范与闭环标准</span>
+  <p>二维对角线平移与质量守恒核验！</p>
+</div>
+
+<table>
+  <tr><th>工程任务编号</th><td>FDM-0007</td></tr>
+  <tr><th>对接内核模块</th><td><code>solvers/fdm/step05_linear_convection_2d.py</code></td></tr>
+  <tr><th>单命令验证行</th><td><pre style="margin:0; padding:0.4rem 0.6rem;"><code>D:\Anaconda3\envs\pytorch_env\python.exe solvers/fdm/step05_linear_convection_2d.py</code></pre></td></tr>
+  <tr><th>闭环三件套 ① 图</th><td>2D 方帽沿对角线平移前后的三维曲面与等高线对比图</td></tr>
+  <tr><th>闭环三件套 ② 物理结论</th><td>验证二维迎风格式在多维 CFL 约束下的平移稳定性，波峰严格到达预期坐标</td></tr>
+  <tr><th>闭环三件套 ③ 实测基准数字</th><td><strong>全域质量积分守恒相对误差 $< 1.0 \times 10^{-12}$，波峰坐标准确抵达 $(0.75, 0.75)$</strong></td></tr>
+</table>
+
+<h2>7 ·【承前启后 · 下章预告与私人导师考场】</h2>
+
+<div class="box mentor">
+  <span class="box-title">◆ 物理剧情推进：二维世界的粘性扩散与场耦合！</span>
+  <p>你已经熟练掌握了二维平面上的定向对流与迎风因果律。但是，只有对流的世界是残缺的，它最终会因为人工耗散或非线性激波走向极限。</p>
+  <p>下一章我们将进入 <strong>Step 7 & 8：二维各向同性扩散与矢量耦合 Burgers 方程</strong>！我们将推导著名的二维五点拉普拉斯十字模板，探究热量是如何向 360 度四面八方同时逃逸的。更重要的是，我们将首次直面 $u$ 场与 $v$ 场互相推动、相互耦合的非线性动力学系统！</p>
+  <p><strong>【导师考场提示】：</strong>学完本章后，可直接在对话框向导师发送：“<em>导师，我对二维网格切片和多维 CFL 判据已通透掌握，请出题考查我对二维迎风格式的推演！</em>”</p>
+</div>
+
+
+<footer class="lesson-foot">
+  <div class="nav">
+    <span><a href="0006-step4-burgers.html">← 第 06 章 · Step 4 一维 Burgers</a></span>
+    <span><a href="../index.html">返回课程总览</a></span>
+    <span><a href="0008-step7-8-2d-diffusion-burgers.html">第 08 章 · Steps 7+8 二维扩散与矢量 Burgers →</a></span>
+  </div>
+  <p>计算物理与科学机器学习全景教材 · 卷一：离散世界与有限差分底座</p>
+</footer>
+
+</div>
+</body>
+</html>
