@@ -29,7 +29,8 @@ jobs:
     - name: Install Scientific Packages
       run: |
         python -m pip install --upgrade pip
-        pip install numpy scipy matplotlib sympy torch deepxde neuraloperator
+        pip install torch --index-url https://download.pytorch.org/whl/cpu
+        pip install -r requirements.txt
 
     - name: Execute Daily Radar & Leaderboard Pipeline
       run: |

@@ -1,0 +1,10 @@
+# Core Scientific Computing
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+sympy>=1.12.0
+
+# Scientific Machine Learning & Neural Operators
+torch>=2.0.0
+deepxde>=1.11.0
+neuraloperator>=1.0.0
