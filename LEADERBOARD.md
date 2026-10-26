@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-10-25 02:25 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-10-26 02:25 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,31 +48,19 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-10-25 02:25 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-10-26 02:25 UTC**:
 
-### 1. [AcoustiPrint: Physics-Guided Neural Design of Manufacturable Acoustic Structures](http://arxiv.org/abs/2610.30411v1)
-- **Authors**: Shanmuka Sadhu, Harshvardhan C. Takawale, Yehia Zakaria et al. (2026-10-21)
-- **Abstract Takeaway**: Recent work in additive manufacturing and neural inverse design enables the creation of complex three-dimensional structures to manipulate physical fields, yet these designs must also adhere to discre...
+### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
+- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
+- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
 
-### 2. [SSMCGM-Stream: A Streaming State-Space Model for Personalized Diabetes Management](http://arxiv.org/abs/2610.28976v1)
-- **Authors**: Shakson Isaac, Chirag Patel (2026-10-20)
-- **Abstract Takeaway**: Continuous glucose monitoring supports diabetes management but requires forecasting models that are accurate, interpretable, and efficient enough for real-time deployment. We present SSMCGM-Stream, a ...
+### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
+- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
+- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
 
-### 3. [Improved three component IVIM fitting using physics-informed neural network with multimodal spatial prior](http://arxiv.org/abs/2610.28873v1)
-- **Authors**: Nhat Hoang, Abrar Faiyaz, Emmanuel A. Mensah et al. (2026-10-20)
-- **Abstract Takeaway**: Purpose: To mitigate parameter degeneracy and improve robustness of IVIM fitting, a multimodal physics-informed neural network was developed to leverage anatomical information through the combined use...
-
-### 4. [PaPi: Parallel Picard-Duhamel Integration for Fast Neuro-Spectral Architectures](http://arxiv.org/abs/2610.28591v1)
-- **Authors**: Arthur Bizzi, Márcio Marques, Kleyton Da Costa et al. (2026-10-20)
-- **Abstract Takeaway**: Neuro-spectral architectures (NeuSA) are a class of physics-informed neural networks (PINNs) that have proven effective for solving time-dependent PDEs in the frequency domain. However, training and i...
-
-### 5. [Geometry-Agnostic Data-Driven Discovery of Extreme Scenarios](http://arxiv.org/abs/2610.28487v1)
-- **Authors**: Angeline Hu, Ava K. Tse, Kaitlyn S. Yasumura et al. (2026-10-20)
-- **Abstract Takeaway**: We introduce a two-stage data-driven neural framework for discovering dynamically admissible extreme scenarios. Rather than assuming prior knowledge of the governing equations, the first stage infers ...
-
-### 6. [Manifold-Informed Neural Networks for Low-Label ECG Electrolyte Inference](http://arxiv.org/abs/2610.28322v1)
-- **Authors**: Juntang Wang, Hao Wu, Yihan Wang et al. (2026-10-20)
-- **Abstract Takeaway**: Physics-informed neural networks (PINNs) supervise on the residual of a known differential operator. Many high-stakes inference problems admit no such operator: clinical signals, behavioral measuremen...
+### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
+- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
+- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
 
 ---
 
