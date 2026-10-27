@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-10-26 02:25 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-10-27 03:00 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,19 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-10-26 02:25 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-10-27 03:00 UTC**:
 
-### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
-- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
-- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
+### 1. [Lie Symmetry-Guided Adaptive Sampling for Physics-Informed Neural Networks](http://arxiv.org/abs/2610.34345v1)
+- **Authors**: Runze Zhao (2026-10-25)
+- **Abstract Takeaway**: Physics-informed neural networks (PINNs) have emerged as a promising mesh-free framework for solving partial differential equations (PDEs), with broad applications in physics, engineering, and medicin...
 
-### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
-- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
+### 2. [The Symmetry of Differential Neural Tangent Kernel under the Orthogonal Group](http://arxiv.org/abs/2610.34023v1)
+- **Authors**: Bangti Jin, Longjun Wu (2026-10-25)
+- **Abstract Takeaway**: The differential neural tangent kernel (DNTK) is a tool for analyzing the training dynamics of overparameterized physics informed neural networks. In this work, we investigate the symmetry of the infi...
 
-### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
-- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
+### 3. [Performance of Neural Operator Baselines on 'The Well' Dataset](http://arxiv.org/abs/2610.33967v1)
+- **Authors**: Yash Pincha, Andy Dimnaku, Andrew Chiang et al. (2026-10-25)
+- **Abstract Takeaway**: The Well, a 15-terabyte dataset spanning 16 physical simulation domains, provides an extensive benchmark for developing and evaluating machine learning surrogate models for complex physical systems. T...
+
+### 4. [An actively trained neural operator for near-explicit atmospheric chemistry](http://arxiv.org/abs/2610.33771v1)
+- **Authors**: Zhi-Song Liu, Wenqing Peng, Ammar Kheder et al. (2026-10-24)
+- **Abstract Takeaway**: Earth-system models simplify atmospheric chemistry into condensed mechanisms, because near-explicit mechanisms such as the Master Chemical Mechanism (MCM) are too costly to solve in every grid cell. N...
+
+### 5. [Hybrid-time PINNs: Discontinuity-Aware Physics-Informed Neural Networks for Learning Hybrid Dynamical Systems](http://arxiv.org/abs/2610.33562v1)
+- **Authors**: Shivanshu Tripathi, Maziar Raissi (2026-10-24)
+- **Abstract Takeaway**: Hybrid dynamical systems flow continuously but jump at discrete events. Physics-informed neural networks (PINNs) fit data while enforcing known dynamics, but a single network is smooth in time and can...
+
+### 6. [Physics Informed Neural Network for Multi-dimensional Turbulent Self-gravitating Flows](http://arxiv.org/abs/2610.32840v1)
+- **Authors**: Tirthankar De, Sayantan Auddy, Ramit Dey et al. (2026-10-23)
+- **Abstract Takeaway**: Molecular clouds exhibit complex, multi-scale dynamics driven by the interplay of turbulence, self-gravity, and gas pressure. Modelling these systems with conventional grid-based methods becomes incre...
 
 ---
 
