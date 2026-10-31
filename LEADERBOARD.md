@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-10-30 03:40 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-10-31 03:24 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,31 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-10-30 03:40 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-10-31 03:24 UTC**:
 
-### 1. [Linear-Stability-Guided Two-Stage Surrogate Model for Nonlinear ITG-TEM Turbulence](http://arxiv.org/abs/2610.39381v1)
+### 1. [Learning Kolmogorov Backward Operators for Spectral Analysis and Forecasting: A Data-Driven Variational Galerkin Framework](http://arxiv.org/abs/2610.39580v1)
+- **Authors**: Yuanchao Xu, Claire Valva, Ben Gao et al. (2026-10-29)
+- **Abstract Takeaway**: For a time-homogeneous Markov process, the fixed-lag solution operator \( (T_τf)(x)=\mathbb E[f(X_{t+τ})\mid X_t=x] \) of the Kolmogorov backward equation evolves observables linearly and deterministi...
+
+### 2. [Linear-Stability-Guided Two-Stage Surrogate Model for Nonlinear ITG-TEM Turbulence](http://arxiv.org/abs/2610.39381v1)
 - **Authors**: Y. W. Cho, C. G. Wan, Z. S. Qu et al. (2026-10-29)
 - **Abstract Takeaway**: We develop a two-stage surrogate model framework to predict the linear and nonlinear properties of ITG-TEM turbulence from GENE gyrokinetic simulations. The first stage uses a hierarchical ensemble of...
 
-### 2. [Agentic AI Reasoning and Learned Sampling for Task-Aware Projection Selection in Sparse-View CT: Predicting Hemodynamics](http://arxiv.org/abs/2610.39003v1)
+### 3. [Agentic AI Reasoning and Learned Sampling for Task-Aware Projection Selection in Sparse-View CT: Predicting Hemodynamics](http://arxiv.org/abs/2610.39003v1)
 - **Authors**: Mahmoud Elhadidy, Roshan M. D'Souza, Amirhossein Arzani (2026-10-28)
 - **Abstract Takeaway**: Sparse-view computed tomography (CT) reduces the number of acquired projections, but conventional sampling strategies are designed primarily for image reconstruction rather than for downstream physica...
 
-### 3. [Inherent Failure Modes of Physics-Informed Neural Networks for Buoyancy-Driven Flow: Role of Non-Dimensionalization in Network Training](http://arxiv.org/abs/2610.38889v1)
+### 4. [Inherent Failure Modes of Physics-Informed Neural Networks for Buoyancy-Driven Flow: Role of Non-Dimensionalization in Network Training](http://arxiv.org/abs/2610.38889v1)
 - **Authors**: Krishan Chand, Ahmad Peyvan, Haoxiang Luo (2026-10-28)
 - **Abstract Takeaway**: We investigate the influence of non-dimensionalization on the trainability and accuracy of physics-informed neural networks (PINNs) for buoyancy-driven flows. Using a differentially heated square cavi...
 
-### 4. [Regional accuracy of physics-informed neural networks (PINNs) for recirculation in a deep lid-driven cavity](http://arxiv.org/abs/2610.38814v1)
+### 5. [Regional accuracy of physics-informed neural networks (PINNs) for recirculation in a deep lid-driven cavity](http://arxiv.org/abs/2610.38814v1)
 - **Authors**: Ehsan Roohi, Christopher J. McDevitt (2026-10-28)
 - **Abstract Takeaway**: Deep lid-driven cavities contain strong motion beneath the lid and much weaker recirculation at depth, so agreement in bulk velocity is an incomplete assessment of a computed flow. We examine data-fre...
 
-### 5. [Safeguarded Neurally-Accelerated Preconditioning (SNAP) framework for Nonlinear Optimization](http://arxiv.org/abs/2610.38790v1)
+### 6. [Safeguarded Neurally-Accelerated Preconditioning (SNAP) framework for Nonlinear Optimization](http://arxiv.org/abs/2610.38790v1)
 - **Authors**: Youngkyu Lee, George Em Karniadakis, Alena Kopaničáková (2026-10-28)
 - **Abstract Takeaway**: We introduce the Safeguarded Neurally-Accelerated Preconditioning (SNAP) framework for hybridizing nonlinear optimization methods with pre-trained neural operators (NOs). SNAP targets parametric optim...
-
-### 6. [A Physics-Informed Neural Network for Geodesic Computation and Visualization of Geodesic Spheres on Riemannian Manifolds](http://arxiv.org/abs/2610.38260v1)
-- **Authors**: Sujit Bhattacharyya (2026-10-28)
-- **Abstract Takeaway**: Visualizing geodesic structures associated with general Riemannian metrics is a challenging problem in computational differential geometry. In this work, we present a computational framework for visua...
 
 ---
 
