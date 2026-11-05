@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-04 04:00 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-05 04:22 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,19 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-04 04:00 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-05 04:22 UTC**:
 
-### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
-- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
-- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
+### 1. [Unsupervised Neural Operators for Rotating Relativistic Stars: High-Fidelity Equation of State Inference and Pulsar Spin Evolution at Scale](http://arxiv.org/abs/2611.05790v1)
+- **Authors**: Anarya Ray (2026-11-04)
+- **Abstract Takeaway**: Observed populations of rotating neutron stars~(NSs) with millisecond-order periods are powerful probes of fundamental physics. Mass-radius measurements inform poorly constrained properties of degener...
 
-### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
-- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
+### 2. [A physics-informed neural network method for pressure-driven turbine-blade optimization](http://arxiv.org/abs/2611.05691v1)
+- **Authors**: Yuan Huang, Francesca di Mare (2026-11-03)
+- **Abstract Takeaway**: We develop a physics-informed method for aerodynamic shape optimisation of turbine blades, treating the flow field and blade geometry as coupled unknowns. The method translates prescribed surface-pres...
 
-### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
-- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
+### 3. [Adaptive Domain Decomposition for Finite Basis Physics-Informed Neural Networks](http://arxiv.org/abs/2611.05659v1)
+- **Authors**: Sarah Helfert, Wanxin Chen, Amanda A. Howard et al. (2026-11-03)
+- **Abstract Takeaway**: In this work, we present adaptive domain decomposition finite basis physics-informed neural networks (ADD-FBPINNs). The proposed method integrates Partition of Unity Networks (POUNets), a data-driven ...
+
+### 4. [De Rham cohomological architectures for PINNs and PDEs with topological holes](http://arxiv.org/abs/2611.05276v1)
+- **Authors**: Andrew Gracyk (2026-11-03)
+- **Abstract Takeaway**: We attempt to alleviate failure modes of classical physics-informed neural networks (PINNs) in scenarios of topological pathologies corresponding to punctures, holes, poles, and voids by introducing d...
+
+### 5. [Solving the Nonlinear Westervelt Equation in Ultrasound Propagation Using Physics-Informed Neural Networks](http://arxiv.org/abs/2611.05130v1)
+- **Authors**: Luke Oluwaseye Joel (2026-11-03)
+- **Abstract Takeaway**: Modeling the nonlinear acoustic wave propagation in biological tissues needs accuracy, especially in ultrasound imaging and therapeutic applications. The 1D Westervelt equation, \( p_{xx} - p_{tt} + γ...
+
+### 6. [Spin Spherical Fourier Neural Operators: Efficient Equivariant Learning for Vector and Spin Fields on the Sphere](http://arxiv.org/abs/2611.04389v1)
+- **Authors**: Kevin Mulder, Matthew A. Price, Eirini Leftaki et al. (2026-11-03)
+- **Abstract Takeaway**: Many fields of physical interest on the sphere, such as wind, the polarisation of the cosmic microwave background and the shear of weak gravitational lensing, are spin fields, whose values change phas...
 
 ---
 
