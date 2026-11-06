@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-05 04:22 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-06 04:20 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,31 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-05 04:22 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-06 04:20 UTC**:
 
-### 1. [Unsupervised Neural Operators for Rotating Relativistic Stars: High-Fidelity Equation of State Inference and Pulsar Spin Evolution at Scale](http://arxiv.org/abs/2611.05790v1)
+### 1. [LithoSAGE: Spatially Adaptive and Geometrically Equivariant Neural Operators for Computational Lithography](http://arxiv.org/abs/2611.08001v1)
+- **Authors**: Ke Jin, Zhenli Xu, Zilin You (2026-11-05)
+- **Abstract Takeaway**: Operator learning offers an efficient surrogate for lithography simulation, replacing costly numerical solutions with direct model inference. However, existing learning architectures are not designed ...
+
+### 2. [Rigorously Certified Neural-Network Computation of Nonlinear Water Waves at Near-Machine Precision](http://arxiv.org/abs/2611.07395v1)
+- **Authors**: Michal Shavit, Yongji Wang, Tristan Buckmaster (2026-11-05)
+- **Abstract Takeaway**: We present a computational framework that combines machine-learning-based discovery with rigorous computer-assisted numerical certification and formal verification for strongly nonlinear partial diffe...
+
+### 3. [Projection-based segregated, iterative, and multi-stage physics-informed neural network for incompressible Navier-stokes equations](http://arxiv.org/abs/2611.07387v1)
+- **Authors**: Zhenyu Zhang, Zhixiang Ling, Yinghao Huo et al. (2026-11-05)
+- **Abstract Takeaway**: Physics-informed neural networks(PINNs) offer a mesh-free and continuously differentiable approach to fluid simulation. However, standard monolithic PINNs for incompressible Navier-Stokes (NS) equatio...
+
+### 4. [Fractional physics-informed neural networks to model social media virality](http://arxiv.org/abs/2611.07215v1)
+- **Authors**: Alex Koong, George Em Karniadakis (2026-11-04)
+- **Abstract Takeaway**: Existing models of social media virality either prescribe the functional form of engagement growth or assume a fixed mechanism by which past activity influences future engagement. We present a fractio...
+
+### 5. [FNO-Based Inverse Co-Design of Semiconducting Quantum-Dot Devices](http://arxiv.org/abs/2611.06994v1)
+- **Authors**: Marek Rychetsky, Valentin Duruisseaux, Freya Shah et al. (2026-11-04)
+- **Abstract Takeaway**: Gate-defined semiconductor quantum dots are promising building blocks for scalable spin-based quantum processors, however their operational properties depend on several fabrication and control paramet...
+
+### 6. [Unsupervised Neural Operators for Rotating Relativistic Stars: High-Fidelity Equation of State Inference and Pulsar Spin Evolution at Scale](http://arxiv.org/abs/2611.05790v1)
 - **Authors**: Anarya Ray (2026-11-04)
 - **Abstract Takeaway**: Observed populations of rotating neutron stars~(NSs) with millisecond-order periods are powerful probes of fundamental physics. Mass-radius measurements inform poorly constrained properties of degener...
-
-### 2. [A physics-informed neural network method for pressure-driven turbine-blade optimization](http://arxiv.org/abs/2611.05691v1)
-- **Authors**: Yuan Huang, Francesca di Mare (2026-11-03)
-- **Abstract Takeaway**: We develop a physics-informed method for aerodynamic shape optimisation of turbine blades, treating the flow field and blade geometry as coupled unknowns. The method translates prescribed surface-pres...
-
-### 3. [Adaptive Domain Decomposition for Finite Basis Physics-Informed Neural Networks](http://arxiv.org/abs/2611.05659v1)
-- **Authors**: Sarah Helfert, Wanxin Chen, Amanda A. Howard et al. (2026-11-03)
-- **Abstract Takeaway**: In this work, we present adaptive domain decomposition finite basis physics-informed neural networks (ADD-FBPINNs). The proposed method integrates Partition of Unity Networks (POUNets), a data-driven ...
-
-### 4. [De Rham cohomological architectures for PINNs and PDEs with topological holes](http://arxiv.org/abs/2611.05276v1)
-- **Authors**: Andrew Gracyk (2026-11-03)
-- **Abstract Takeaway**: We attempt to alleviate failure modes of classical physics-informed neural networks (PINNs) in scenarios of topological pathologies corresponding to punctures, holes, poles, and voids by introducing d...
-
-### 5. [Solving the Nonlinear Westervelt Equation in Ultrasound Propagation Using Physics-Informed Neural Networks](http://arxiv.org/abs/2611.05130v1)
-- **Authors**: Luke Oluwaseye Joel (2026-11-03)
-- **Abstract Takeaway**: Modeling the nonlinear acoustic wave propagation in biological tissues needs accuracy, especially in ultrasound imaging and therapeutic applications. The 1D Westervelt equation, \( p_{xx} - p_{tt} + γ...
-
-### 6. [Spin Spherical Fourier Neural Operators: Efficient Equivariant Learning for Vector and Spin Fields on the Sphere](http://arxiv.org/abs/2611.04389v1)
-- **Authors**: Kevin Mulder, Matthew A. Price, Eirini Leftaki et al. (2026-11-03)
-- **Abstract Takeaway**: Many fields of physical interest on the sphere, such as wind, the polarisation of the cosmic microwave background and the shear of weak gravitational lensing, are spin fields, whose values change phas...
 
 ---
 
