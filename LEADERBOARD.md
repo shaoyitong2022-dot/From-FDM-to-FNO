@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-07 03:50 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-08 03:32 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,31 +48,19 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-07 03:50 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-08 03:32 UTC**:
 
-### 1. [LithoSAGE: Spatially Adaptive and Geometrically Equivariant Neural Operators for Computational Lithography](http://arxiv.org/abs/2611.08001v1)
-- **Authors**: Ke Jin, Zhenli Xu, Zilin You (2026-11-05)
-- **Abstract Takeaway**: Operator learning offers an efficient surrogate for lithography simulation, replacing costly numerical solutions with direct model inference. However, existing learning architectures are not designed ...
+### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
+- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
+- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
 
-### 2. [Rigorously Certified Neural-Network Computation of Nonlinear Water Waves at Near-Machine Precision](http://arxiv.org/abs/2611.07395v1)
-- **Authors**: Michal Shavit, Yongji Wang, Tristan Buckmaster (2026-11-05)
-- **Abstract Takeaway**: We present a computational framework that combines machine-learning-based discovery with rigorous computer-assisted numerical certification and formal verification for strongly nonlinear partial diffe...
+### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
+- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
+- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
 
-### 3. [Projection-based segregated, iterative, and multi-stage physics-informed neural network for incompressible Navier-stokes equations](http://arxiv.org/abs/2611.07387v1)
-- **Authors**: Zhenyu Zhang, Zhixiang Ling, Yinghao Huo et al. (2026-11-05)
-- **Abstract Takeaway**: Physics-informed neural networks(PINNs) offer a mesh-free and continuously differentiable approach to fluid simulation. However, standard monolithic PINNs for incompressible Navier-Stokes (NS) equatio...
-
-### 4. [Fractional physics-informed neural networks to model social media virality](http://arxiv.org/abs/2611.07215v1)
-- **Authors**: Alex Koong, George Em Karniadakis (2026-11-04)
-- **Abstract Takeaway**: Existing models of social media virality either prescribe the functional form of engagement growth or assume a fixed mechanism by which past activity influences future engagement. We present a fractio...
-
-### 5. [FNO-Based Inverse Co-Design of Semiconducting Quantum-Dot Devices](http://arxiv.org/abs/2611.06994v1)
-- **Authors**: Marek Rychetsky, Valentin Duruisseaux, Freya Shah et al. (2026-11-04)
-- **Abstract Takeaway**: Gate-defined semiconductor quantum dots are promising building blocks for scalable spin-based quantum processors, however their operational properties depend on several fabrication and control paramet...
-
-### 6. [Unsupervised Neural Operators for Rotating Relativistic Stars: High-Fidelity Equation of State Inference and Pulsar Spin Evolution at Scale](http://arxiv.org/abs/2611.05790v1)
-- **Authors**: Anarya Ray (2026-11-04)
-- **Abstract Takeaway**: Observed populations of rotating neutron stars~(NSs) with millisecond-order periods are powerful probes of fundamental physics. Mass-radius measurements inform poorly constrained properties of degener...
+### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
+- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
+- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
 
 ---
 
