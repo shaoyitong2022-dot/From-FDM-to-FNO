@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-11 03:52 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-12 04:59 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,31 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-11 03:52 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-12 04:59 UTC**:
 
-### 1. [PINNverse meets Jordan--Wigner: learning the Hamiltonian of long spin chains](http://arxiv.org/abs/2611.14023v1)
+### 1. [Beyond Accuracy: Physics-Informed Evaluation of ANN-based Power Flow Solvers under System Shift](http://arxiv.org/abs/2611.14240v1)
+- **Authors**: Dong Liu, Jochen Stiasny, Jochen Cremer et al. (2026-11-10)
+- **Abstract Takeaway**: Recent advances in artificial deep learning-based power flow (PF) solvers have primarily focused on improving estimation accuracy, while their physical feasibility and operational reliability under re...
+
+### 2. [PINNverse meets Jordan--Wigner: learning the Hamiltonian of long spin chains](http://arxiv.org/abs/2611.14023v1)
 - **Authors**: Gubio G De Lima (2026-11-10)
 - **Abstract Takeaway**: Inverse physics-informed neural networks (PINNverse) learn the parameters of a quantum Hamiltonian from measured expectation values, but the network output grows as $4^N$ with the number of qubits $N$...
 
-### 2. [Multiscale LegONet: Learning Coefficient-Dependent Local Spaces for Composable Multiscale Finite Elements with Localized Error Bounds](http://arxiv.org/abs/2611.13515v1)
+### 3. [Multiscale LegONet: Learning Coefficient-Dependent Local Spaces for Composable Multiscale Finite Elements with Localized Error Bounds](http://arxiv.org/abs/2611.13515v1)
 - **Authors**: Yueqi Wang, Cindy Xiangrui Kong, Guang Lin (2026-11-10)
 - **Abstract Takeaway**: We introduce multiscale LegONet (Ms-LegONet), a plug-and-play learned block for heterogeneous elliptic problems. One network per spatial dimension is trained once on local coefficient patches and reus...
 
-### 3. [Residual-Corrected Physics-Informed Neural Network KKL Observers with Input-to-State Stability Guarantees](http://arxiv.org/abs/2611.13411v1)
+### 4. [Residual-Corrected Physics-Informed Neural Network KKL Observers with Input-to-State Stability Guarantees](http://arxiv.org/abs/2611.13411v1)
 - **Authors**: Hannah Berin-Costain, Jun Liu, Kirsten Morris (2026-11-10)
 - **Abstract Takeaway**: Physics-informed neural network (PINN) Kazantzis--Kravaris--Luenberger (KKL) observers require an approximate solution to a KKL partial differential equation (PDE) and an approximate inverse of this s...
 
-### 4. [Reconstructing Boundary Layer Wind Profiles with Machine Learning: A Comparative Study on IGRA Radiosonde Data](http://arxiv.org/abs/2611.13359v1)
+### 5. [Reconstructing Boundary Layer Wind Profiles with Machine Learning: A Comparative Study on IGRA Radiosonde Data](http://arxiv.org/abs/2611.13359v1)
 - **Authors**: Fedor Buzaev, Dmitry Efremenko, Daria Pugacheva et al. (2026-11-09)
 - **Abstract Takeaway**: Wind profiles in the atmospheric boundary layer (ABL) drive short-range forecasting and wind-energy siting, yet sparse radiosonde coverage forces practitioners to interpolate them from a handful of ph...
 
-### 5. [Modal-Augmented Chebyshev Physics-Informed Kolmogorov-Arnold Networks for Power Systems](http://arxiv.org/abs/2611.13340v1)
+### 6. [Modal-Augmented Chebyshev Physics-Informed Kolmogorov-Arnold Networks for Power Systems](http://arxiv.org/abs/2611.13340v1)
 - **Authors**: Komeil Nosrati, Majid Ghorbani, Aleksei Tepljakov et al. (2026-11-09)
 - **Abstract Takeaway**: Physics-informed neural networks (PINNs) offer a promising alternative to numerical integration for power system dynamic simulation; however, their conventional architectures can struggle to capture e...
-
-### 6. [Block-Sparse Gauss-Newton Optimization of Finite Basis Physics-Informed Neural Networks: Sparse Automatic Differentiation Approach](http://arxiv.org/abs/2611.13231v1)
-- **Authors**: Denis Korolev, Adrian Hill, Jeeeun Lee (2026-11-09)
-- **Abstract Takeaway**: In this work, we develop an efficient Gauss-Newton optimization approach for finite basis physics-informed neural networks (FBPINNs). The key ingredient is the overlapping domain decomposition archite...
 
 ---
 
