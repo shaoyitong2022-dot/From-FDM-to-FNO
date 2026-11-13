@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-12 04:59 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-13 04:14 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,31 +48,19 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-12 04:59 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-13 04:14 UTC**:
 
-### 1. [Beyond Accuracy: Physics-Informed Evaluation of ANN-based Power Flow Solvers under System Shift](http://arxiv.org/abs/2611.14240v1)
-- **Authors**: Dong Liu, Jochen Stiasny, Jochen Cremer et al. (2026-11-10)
-- **Abstract Takeaway**: Recent advances in artificial deep learning-based power flow (PF) solvers have primarily focused on improving estimation accuracy, while their physical feasibility and operational reliability under re...
+### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
+- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
+- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
 
-### 2. [PINNverse meets Jordan--Wigner: learning the Hamiltonian of long spin chains](http://arxiv.org/abs/2611.14023v1)
-- **Authors**: Gubio G De Lima (2026-11-10)
-- **Abstract Takeaway**: Inverse physics-informed neural networks (PINNverse) learn the parameters of a quantum Hamiltonian from measured expectation values, but the network output grows as $4^N$ with the number of qubits $N$...
+### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
+- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
+- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
 
-### 3. [Multiscale LegONet: Learning Coefficient-Dependent Local Spaces for Composable Multiscale Finite Elements with Localized Error Bounds](http://arxiv.org/abs/2611.13515v1)
-- **Authors**: Yueqi Wang, Cindy Xiangrui Kong, Guang Lin (2026-11-10)
-- **Abstract Takeaway**: We introduce multiscale LegONet (Ms-LegONet), a plug-and-play learned block for heterogeneous elliptic problems. One network per spatial dimension is trained once on local coefficient patches and reus...
-
-### 4. [Residual-Corrected Physics-Informed Neural Network KKL Observers with Input-to-State Stability Guarantees](http://arxiv.org/abs/2611.13411v1)
-- **Authors**: Hannah Berin-Costain, Jun Liu, Kirsten Morris (2026-11-10)
-- **Abstract Takeaway**: Physics-informed neural network (PINN) Kazantzis--Kravaris--Luenberger (KKL) observers require an approximate solution to a KKL partial differential equation (PDE) and an approximate inverse of this s...
-
-### 5. [Reconstructing Boundary Layer Wind Profiles with Machine Learning: A Comparative Study on IGRA Radiosonde Data](http://arxiv.org/abs/2611.13359v1)
-- **Authors**: Fedor Buzaev, Dmitry Efremenko, Daria Pugacheva et al. (2026-11-09)
-- **Abstract Takeaway**: Wind profiles in the atmospheric boundary layer (ABL) drive short-range forecasting and wind-energy siting, yet sparse radiosonde coverage forces practitioners to interpolate them from a handful of ph...
-
-### 6. [Modal-Augmented Chebyshev Physics-Informed Kolmogorov-Arnold Networks for Power Systems](http://arxiv.org/abs/2611.13340v1)
-- **Authors**: Komeil Nosrati, Majid Ghorbani, Aleksei Tepljakov et al. (2026-11-09)
-- **Abstract Takeaway**: Physics-informed neural networks (PINNs) offer a promising alternative to numerical integration for power system dynamic simulation; however, their conventional architectures can struggle to capture e...
+### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
+- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
+- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
 
 ---
 
