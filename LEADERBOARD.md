@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-16 03:56 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-17 05:49 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,19 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-16 03:56 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-17 05:49 UTC**:
 
-### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
-- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
-- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
+### 1. [Newton-PINet: A fast physics-informed neural network with Newton linearization for meta-learning nonlinear PDEs](http://arxiv.org/abs/2611.20609v1)
+- **Authors**: Yuchen Fan, Chang Wei, Pao-Hsiung Chiu et al. (2026-11-16)
+- **Abstract Takeaway**: Scientific machine learning has opened new avenues for solving parameterized partial differential equations (PDEs), enabling models to learn a family of PDEs and generalize to unseen instances. In thi...
 
-### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
-- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
+### 2. [Neural Operator Approximation for Yau--Yau Nonlinear Filtering: Stability, Approximation, and Fast Computation](http://arxiv.org/abs/2611.20598v1)
+- **Authors**: Xiaopei Jiao, Xiuqiong Chen, Stephen S. -T. Yau (2026-11-16)
+- **Abstract Takeaway**: Since the introduction of the Kalman filter, nonlinear state estimation has become an important topic in areas such as aerospace engineering, sensor design, and target tracking. Within the optimal fil...
 
-### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
-- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
+### 3. [A Staggered Discontinuous Galerkin Neural Network Method with a Computable Error Decomposition](http://arxiv.org/abs/2611.20556v1)
+- **Authors**: Gung-Min Gie, Chang-Yeol Jung, Bongsuk Kwon et al. (2026-11-16)
+- **Abstract Takeaway**: We develop a staggered discontinuous Galerkin neural network (SDGNN) method for scalar elliptic problems with a computable error decomposition. The staggered discontinuous Galerkin (SDG) method requir...
+
+### 4. [Physics-informed neural network for model-based global computation of the asymptotic phase of limit-cycle oscillators](http://arxiv.org/abs/2611.20450v1)
+- **Authors**: Petar Mircheski, Hiroya Nakao (2026-11-16)
+- **Abstract Takeaway**: The asymptotic phase is the central object of phase reduction theory for limit-cycle oscillators. It is a scalar coordinate defined throughout the basin of attraction of a limit cycle that advances at...
+
+### 5. [Variance Stable Gaussian Smoothing Estimator for Arbitrary High-order Derivatives](http://arxiv.org/abs/2611.19909v1)
+- **Authors**: Shuixin Fang, Xuerui Wang, Hang Zeng et al. (2026-11-15)
+- **Abstract Takeaway**: Computing high-order partial derivatives in high dimensions by automatic differentiation can be costly in both computation and memory. Stein's identity offers an alternative through Gaussian smoothing...
+
+### 6. [PIRanNN: Random-Feature Pricing and Calibration under Jump-Diffusion and Stochastic-Volatility Models](http://arxiv.org/abs/2611.19792v1)
+- **Authors**: Saurabh Bansal, Srikanth K. Iyer, Shashi Jain (2026-11-15)
+- **Abstract Takeaway**: We study a random-feature method for pricing and calibrating European options under jump-diffusion (Merton, Kou) and stochastic-volatility (Heston, SABR) models. The network has one hidden layer with ...
 
 ---
 
