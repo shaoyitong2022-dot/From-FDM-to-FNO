@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-19 05:09 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-20 04:58 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,19 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-19 05:09 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-20 04:58 UTC**:
 
-### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
-- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
-- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
+### 1. [The Price of an Explanation: What Demanding Verifiable Artifacts Costs, and What It Buys Back](http://arxiv.org/abs/2611.25896v1)
+- **Authors**: Edgar A. Duéñez-Guzmán, Eduardo Dueñez, Edgar Said Hernandez Sanchez et al. (2026-11-19)
+- **Abstract Takeaway**: Generative models produce many candidate solutions but provide no intrinsic signal by which to rank them. One mitigation is to demand a \emph{verifiable artifact}: a program that can be executed again...
 
-### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
-- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
+### 2. [Self-Supervised Operator Learning for Channel Estimation in Fluid Antenna Systems](http://arxiv.org/abs/2611.25756v1)
+- **Authors**: Erqiang Tang, Zixin Wang, Wei Guo et al. (2026-11-19)
+- **Abstract Takeaway**: Fluid antenna systems (FAS) have emerged as a promising technology for enhancing wireless communications through adaptive antenna repositioning. Recently, Fourier neural operators (FNOs) have shown st...
 
-### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
-- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
+### 3. [When and why can integral constraints improve the accuracy of physics-informed neural networks?](http://arxiv.org/abs/2611.25515v1)
+- **Authors**: Myeong-Su Lee (2026-11-19)
+- **Abstract Takeaway**: Adding constraints obtained by integrating governing equations to the loss has been reported to improve the accuracy of physics-informed neural networks (PINNs) in several applications, but mathematic...
+
+### 4. [Data-Driven Hamiltonian Under Parametric Uncertainty](http://arxiv.org/abs/2611.25356v1)
+- **Authors**: Zach Liu, Namhoon Cho, Jason J. Choi (2026-11-19)
+- **Abstract Takeaway**: Hamilton--Jacobi (HJ) reachability computes the states from which a system can be kept out of an unsafe region, but it requires knowledge of dynamics. The data-driven Hamiltonian (DDH), under a black-...
+
+### 5. [PDE-State Conditioning for Learned Optimization Using Physics-Informed Neural Networks](http://arxiv.org/abs/2611.25185v1)
+- **Authors**: Farzana Yasmin, Ricardo Vilalta (2026-11-18)
+- **Abstract Takeaway**: Physics-informed neural network (PINN) optimization depends on global properties of the underlying PDE and how the physics residual evolves across the domain. Standard optimizers such as Adam use fixe...
+
+### 6. [Temporal Extrapolation of Elastic Seismic Wave Propagation in Layered Media Using Neural Operators](http://arxiv.org/abs/2611.25130v1)
+- **Authors**: Dibyajyoti Nayak, Yuze Pu, Kami Mohammadi et al. (2026-11-18)
+- **Abstract Takeaway**: Temporal prediction of seismic velocity fields beyond the time interval represented in training remains challenging for neural operator models. This study develops a coupled neural operator framework ...
 
 ---
 
