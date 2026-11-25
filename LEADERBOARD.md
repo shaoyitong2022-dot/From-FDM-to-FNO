@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-24 07:42 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-25 06:11 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,19 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-24 07:42 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-25 06:11 UTC**:
 
-### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
-- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
-- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
+### 1. [From dispersal to patrol: the extracellular matrix shapes an annealing-like search by Drosophila embryonic macrophages](http://arxiv.org/abs/2611.33097v1)
+- **Authors**: Nickolay Korabel, Tom H. Millard, Thomas Andrew Waigh (2026-11-24)
+- **Abstract Takeaway**: Hemocytes, the macrophages of Drosophila, disperse through the embryo and then patrol its tissues, moving along basement membranes that they help to build. Because the persistence (H) and amplitude (D...
 
-### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
-- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
+### 2. [Theory-Informed Quantum Error Mitigation for Shor Order Finding with Fourier Neural Operators](http://arxiv.org/abs/2611.32923v1)
+- **Authors**: Stefano Markidis, Qingxin Yang, Erik Åsgrim et al. (2026-11-24)
+- **Abstract Takeaway**: Quantum noise distorts the distribution of circuit measurement outcomes, often leaving enough information to infer the algorithm's correct result. To recover this latent information from the noisy dis...
 
-### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
-- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
+### 3. [Contract2Reach: Discretization-Induced Contractive Dynamic Programming for High-Dimensional Hamilton-Jacobi Reachability](http://arxiv.org/abs/2611.32774v1)
+- **Authors**: Jaeyoung Lee, Donggun Lee, Jason J. Choi et al. (2026-11-24)
+- **Abstract Takeaway**: Physics-informed neural networks (PINNs) enable undiscounted Hamilton-Jacobi (HJ) reachability analysis for high-dimensional systems, but their performance can be sensitive to hyperparameter choices a...
+
+### 4. [Physics-informed neural networks for strong normal shocks in kinetic relaxation models and the hard-sphere Boltzmann equation](http://arxiv.org/abs/2611.31996v1)
+- **Authors**: Ehsan Roohi (2026-11-24)
+- **Abstract Takeaway**: Physics-informed neural networks (PINNs) for kinetic equations have mostly been applied near equilibrium and judged by density, velocity and temperature. Here a network trained on the kinetic equation...
+
+### 5. [SPARK: Spectral Preconditioned Analytic Residual Kolmogorov Arnold Networks for incompressible Navier Stokes equations](http://arxiv.org/abs/2611.31834v1)
+- **Authors**: Dathi Rajasekhar, Thien-Tam Nguyen, Trung Bao Le (2026-11-24)
+- **Abstract Takeaway**: We propose Spectral Jet KAN (SJ-KAN) to reduce the cost of differentiation and the network complexity of Physics-Informed Neural Networks (PINNs) for the Navier-Stokes (NS) equations. The input coordi...
+
+### 6. [Three-Dimensional Wake Reconstruction and Cross-Scale Transfer for Floating Offshore Wind Turbines via Physics-Informed Fourier Neural Operators](http://arxiv.org/abs/2611.31789v1)
+- **Authors**: Guodan Dong, Qi Qian, Feifei Xue et al. (2026-11-24)
+- **Abstract Takeaway**: Coupled surge-pitch motions drive unsteady vortex interactions and dynamic wake meandering behind floating offshore wind turbines, complicating three-dimensional wake reconstruction from limited measu...
 
 ---
 
