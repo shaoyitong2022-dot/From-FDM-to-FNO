@@ -1,6 +1,6 @@
 # Academic Computational Physics & AI4Science Solver Leaderboard
 
-> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-26 06:03 UTC`  
+> **Automated Status**: All 20/20 Benchmarks Verified (100% PASS) | **Last Pulse**: `2026-11-27 05:57 UTC`  
 > **Project Engine**: [From-FDM-to-FNO](https://github.com/shaoyitong2022-dot/From-FDM-to-FNO) | **Maintainer**: Yitong (SYSU Physics)
 
 This leaderboard provides a transparent, empirical performance comparison across **Classical Finite Difference (FDM)**, **Physics-Informed Neural Networks (PINN)**, and **Fourier Neural Operators (FNO)** under identical physical initial-boundary value conditions.
@@ -48,19 +48,31 @@ This leaderboard provides a transparent, empirical performance comparison across
 
 ## 3. Daily AI4Science & SciML Research Radar (arXiv Pulse)
 
-Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-26 06:03 UTC**:
+Automated surveillance of newly published preprints covering Neural Operators, PINN improvements, and high-performance PDE solvers as of **2026-11-27 05:57 UTC**:
 
-### 1. [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895)
-- **Authors**: Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, et al. (Foundational)
-- **Abstract Takeaway**: Formulates operator learning across infinite-dimensional function spaces via spectral convolutions in Fourier domain.
+### 1. [Fewer Parameters, Longer Runtimes: The Wall-Clock Cost of Hybrid Quantum Physics-Informed Neural Networks](http://arxiv.org/abs/2611.34755v1)
+- **Authors**: Leyan Lyu, Shabnam Jabeen (2026-11-25)
+- **Abstract Takeaway**: While hybrid quantum-classical physics-informed neural networks (QCPINNs) are often described as efficient because they have fewer trainable parameters than classical PINNs, parameter count does not m...
 
-### 2. [Physics-Informed Neural Networks: A Deep Learning Framework for Solving Forward and Inverse Problems](https://arxiv.org/abs/1711.10561)
-- **Authors**: Maziar Raissi, Paris Perdikaris, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Introduces continuous implicit neural fields supervised by exact differential equation residual graphs via automatic differentiation.
+### 2. [Global Convergence of Second-Order Methods for Physics-Informed Neural Networks in the Overparameterized Limit](http://arxiv.org/abs/2611.34452v1)
+- **Authors**: Konstantin Riedl, Justin Sirignano, Konstantinos Spiliopoulos (2026-11-25)
+- **Abstract Takeaway**: Solving high-dimensional partial differential equations (PDEs) constitutes a core task in many engineering and scientific disciplines. Physics-informed neural networks and the deep Galerkin method eff...
 
-### 3. [DeepXDE: A Deep Learning Library for Solving Differential Equations](https://arxiv.org/abs/1907.04502)
-- **Authors**: Lu Lu, Xuhui Meng, Zhiping Mao, George Em Karniadakis (Foundational)
-- **Abstract Takeaway**: Canonical open-source framework standardizing geometry domains, boundary conditions, and residual loss definitions.
+### 3. [PINN-Slicer: Exploiting Rotational Symmetry to Solve the Photon Orbit Equation Around a Black Hole](http://arxiv.org/abs/2611.33953v1)
+- **Authors**: Claire David, Tlotlo Oepeng, Harrison B. Prosper (2026-11-25)
+- **Abstract Takeaway**: Physics-Informed Neural Networks (PINNs) typically struggle with long-horizon domains, often requiring the network to be retrained as the domain grows. We present PINN-Slicer, a method for second-orde...
+
+### 4. [Physics-Informed Learning for Multiplayer Differential Games](http://arxiv.org/abs/2611.33644v1)
+- **Authors**: Takuma Adams, Andrew C. Cullen, Tansu Alpcan (2026-11-25)
+- **Abstract Takeaway**: Computing per-player feedback strategies in $N$-player adversarial differential games is challenging as the associated coupled Hamilton-Jacobi-Bellman system is high-dimensional and generally lacks cl...
+
+### 5. [Symmetry-Aware Residual Learning of Few-Body Molecular Wave Functions](http://arxiv.org/abs/2611.33576v1)
+- **Authors**: Meital Bojan, Mikhail Maslov, Jing-Lun Li et al. (2026-11-25)
+- **Abstract Takeaway**: Ultracold polar molecules are a highly controllable platform for engineering quantum matter, but modeling their few-body properties remains computationally challenging. Their anisotropic long-range in...
+
+### 6. [FokasNets: Completing missing boundary data in Physics-Informed Neural Networks and Operators via the Global Relation](http://arxiv.org/abs/2611.33549v1)
+- **Authors**: Kyriakos C. Georgiou, Khemraj Shukla, Athanassios S. Fokas et al. (2026-11-24)
+- **Abstract Takeaway**: We introduce FokasNets, a framework that combines Physics-Informed Neural Networks (PINNs) and operators (PINOs) with the Global Relation (GR) formulation of the Fokas method (also referred to as the ...
 
 ---
 
